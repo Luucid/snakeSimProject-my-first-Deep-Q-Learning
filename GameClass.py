@@ -1,14 +1,19 @@
 import numpy as np
+from time import sleep
 
 
-class StartGame():
+
+
+class Game():
     def __init__(self):
         
-        self.gameBoard = np.array([np.zeros(4)]*4) 
-        self.pieceDict = {0:'E', 1:'ro', 2:'rx', 3:'rt', 4:'rs', 5:'ro*', 6:'rx*', 7:'rt*', 8:'rs*',9:'go', 10:'gx', 11:'gt', 12:'gs', 13:'go*', 14:'gx*', 15:'gt*', 16:'gs*'}
-        self.availablePieces = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16]
+        self.__gameBoard = np.zeros((4,4))
+        self.__pieceDict = {0:' ', 1:'ro', 2:'rx', 3:'rt', 4:'rs', 5:'ro*', 6:'rx*', 7:'rt*', 8:'rs*',9:'go', 10:'gx', 11:'gt', 12:'gs', 13:'go*', 14:'gx*', 15:'gt*', 16:'gs*'}
         
-        self.winScenario = {'red':[1, 2, 3, 4, 5, 6, 7, 8],
+        self.__availablePieces = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16]
+
+        
+        self.__winScenario = {'red':[1, 2, 3, 4, 5, 6, 7, 8],
                             'green':[9, 10, 11, 12, 13, 14, 15, 16],
                             'dot':[5, 6, 7, 8, 13, 14, 15, 16],
                             'circle':[1, 5, 9, 13],
@@ -17,121 +22,175 @@ class StartGame():
                             'cross':[2, 6, 10, 14]}
         
         
+        self.__enableHuman = False
+        self.__currentPlayer = 0
+        self.__running = False
+        self.__lim = [0,1,2,3]
+
+
         
+    
+    def startGame(self):
+        self.__running = True
+        self.__gameLoop()
         
-        self.player1 = 0
-        self.player2 = 0
-        
-        self.currentPlayer = 0
-      
-        self.running = True
-        self.gameLoop()
-        
-        
-    def gameLoop(self):
-        while(self.running):  
-            self.printBoard()
-            self.selectPiece()
-            self.currentPlayer = (self.currentPlayer + 1) % 2
-            self.checkForWin()
+    def __gameLoop(self):
+        while(self.__running):  
+            
+            # self.__printBoard()
+            # sleep(0.2)
+            self.__selectPiece()
+            self.__currentPlayer = (self.__currentPlayer + 1) % 2  
+            self.__checkForWin()
+            
+            
+           
     
     
     
-    def printBoard(self):
+    def __printBoard(self):
         print("\n\n\n")
-        print("current player: %i"%self.currentPlayer, end='')
+        print("current player: %i"% self.__currentPlayer, end='')
         print("\n\n\n")
         
-        for y in self.gameBoard:
+       
+        
+        for y in self.__gameBoard:
             for x in y:
-                print("  %s  " % self.pieceDict[int(x)], end='')
+                
+                print("[ %s ]" % self.__pieceDict[int(x)], end='')
             print("\n")
             
+    
+    
+    def __check(self, val, limit):        
+      while(True):
+          if(val.isdigit()):
+              if(int(val) in limit):
+                  break
+          val = input("error, try again: ")
+      return int(val)        
+
+    
+
+    def __checkAI(self, val, limit):        
+        while(True):
             
+            if(val in limit):
+                break
+        val = np.random.choice(self.__availablePieces)
+        return val
+                    
+      
     
         
          
-    def selectPiece(self):
-        print("available pieces: ")
-   
-        for x in self.availablePieces: 
-            print("%i. "%x, self.pieceDict[x])             
-        piece = int(input("select piece from available(1-16): "))
+    def __selectPiece(self):
         
-        while(piece not in self.availablePieces):
-            piece = int(input("select piece from available(1-16): "))
+        if(self.__currentPlayer == 1 and self.__enableHuman):
+            print("available pieces: ")
+            for x in self.__availablePieces: 
+                print("%i. " % x, self.__pieceDict[x])             
+           
+            piece = self.__check(input("select piece from available(1-16): "), self.__availablePieces)
+        else:
+            piece = np.random.choice(self.__availablePieces)
+        
+        self.__availablePieces.remove(piece)
+        self.__movePiece(piece)
+        
+        
+       
+
+    
+    def __movePiece(self, piece):
+        
+        x = 0
+        y = 0
+        
+        if(self.__currentPlayer == 1 and self.__enableHuman):
+        
+            x = self.__check(input("select x-coordinate: "), self.__lim)
+            y = self.__check(input("select y-coordinate: "), self.__lim)
+            
+            while(self.__gameBoard[y][x] != 0): #add try, except.
+                print("that spot is taken! Please select new coordinates. ")
+                x = self.__check(input("select x-coordinate: "), self.__lim)
+                y = self.__check(input("select y-coordinate: "), self.__lim)
          
-        self.availablePieces.remove(piece)
-        self.movePiece(piece)
+        
+        else:
+            
+            while(self.__gameBoard[y][x] != 0):
+                x = np.random.randint(0, 4)
+                y = np.random.randint(0, 4)
+            
+            
+ 
+        self.__gameBoard[y][x] = piece
         
         
         
         
-    def movePiece(self, piece):
-        x = int(input("select x-coordinate: "))
-        y = int(input("select y-coordinate: "))
-             
-        while(self.gameBoard[y][x] != 0): #add try, except.
-            print("that spot is taken! Please select new coordinates. ")
-            x = int(input("select x-coordinate: "))
-            y = int(input("select y-coordinate: "))
+    
+        
+    def __checkForWin(self):
         
         
-        self.gameBoard[y][x] = piece
-        
-        
-        
-    def checkForWin(self):
-        
-        for y in range(len(self.gameBoard)): 
+            
+        for y in range(len(self.__gameBoard)): 
             vertPoints = {'red':0, 'green':0, 'square':0, 'circle':0, 'triangle':0, 'cross':0, 'dot':0}
             horiPoints = {'red':0, 'green':0, 'square':0, 'circle':0, 'triangle':0, 'cross':0, 'dot':0}    
               
             
-            for x in range(len(self.gameBoard[y])):
-                   
-                for scenario in self.winScenario:
-                    if(self.gameBoard[y][x] in self.winScenario[scenario]):    #horizontal checks
+            for x in range(len(self.__gameBoard[y])):
+                 
+                for scenario in self.__winScenario:
+                    if(self.__gameBoard[y][x] in self.__winScenario[scenario]):    #horizontal checks
                         horiPoints[scenario] += 1
                         if(horiPoints[scenario] > 3):
-                            self.printBoard()
+                            self.__printBoard()
                             print("%s horizontal win" % scenario)
-                            self.running = False
+                            self.__running = False
                         
-                    if(self.gameBoard.T[y][x] in self.winScenario[scenario]):  #vertical checks
+                    if(self.__gameBoard.T[y][x] in self.__winScenario[scenario]):  #vertical checks
                         vertPoints[scenario] += 1
                         if(vertPoints[scenario] > 3):
-                            self.printBoard()
-                            print("player %s wins with a %s vertical play!" % (self.currentPlayer, scenario))
-                            self.running = False
+                            self.__printBoard()
+                            print("player %s wins with a %s vertical play!" % (self.__currentPlayer, scenario))
+                            self.__running = False
         
-        
+            
                    
         
-        for scenario in self.winScenario: 
+        for scenario in self.__winScenario: 
+            
+            diagPoints = {'red':0, 'green':0, 'square':0, 'circle':0, 'triangle':0, 'cross':0, 'dot':0}   
+            for d in self.__gameBoard.diagonal():                                #diagonal check one      
+                if(d in self.__winScenario[scenario]):  
+                    diagPoints[scenario] += 1
+                    if(diagPoints[scenario] > 3):
+                        self.__printBoard()
+                        print("player %s wins with a %s diagonal play!" % (self.__currentPlayer, scenario))
+                        self.__running = False
+            
             diagPoints = {'red':0, 'green':0, 'square':0, 'circle':0, 'triangle':0, 'cross':0, 'dot':0}  
-            
-            for d in self.gameBoard.diagonal():                                #diagonal check one
-                if(d in self.winScenario[scenario]):  
-                                diagPoints[scenario] += 1
-                                if(diagPoints[scenario] > 3):
-                                    self.printBoard()
-                                    print("player %s wins with a %s diagonal play!" % (self.currentPlayer, scenario))
-                                    self.running = False
-            
-            for d in np.fliplr(self.gameBoard).diagonal():                     #diagonal check two
-                if(d in self.winScenario[scenario]):  
-                                diagPoints[scenario] += 1
-                                if(diagPoints[scenario] > 3):
-                                    self.printBoard()
-                                    print("player %s wins with a %s diagonal play!" % (self.currentPlayer, scenario))
-                                    self.running = False
+            for d in np.fliplr(self.__gameBoard).diagonal():                     #diagonal check two
+                if(d in self.__winScenario[scenario]):  
+                    diagPoints[scenario] += 1
+                    if(diagPoints[scenario] > 3):
+                        self.__printBoard()
+                        print("player %s wins with a %s diagonal play!" % (self.__currentPlayer, scenario))
+                        self.__running = False
                         
        
                 
                 
                 
-                
+        if(len(self.__availablePieces) < 1 and self.__running):
+            self.__printBoard()
+            print("DRAW!")
+            self.__running = False   
                     
                 
                 
@@ -143,15 +202,6 @@ class StartGame():
         
         
         
-        
-        
-           
 
-            
-
-
-StartGame()
-    
-        
         
 
