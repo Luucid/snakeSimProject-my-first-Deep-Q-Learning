@@ -1,12 +1,15 @@
 import numpy as np
-from time import sleep
-import pandas as pd
+from os import system
+# from time import sleep
+# import pandas as pd
 
 
 trainPack = {'win': []}
+winTrack = {'draw': 0, 'red':0, 'green':0, 'dot':0, 'circle':0, 'triangle':0, 'square':0, 'cross':0}
+
 
 class Game():
-    def __init__(self):
+    def __init__(self, enableHuman = False):
         
         self.__gameBoard = np.zeros((4,4))
         self.__pieceDict = {0:' ', 1:'ro', 2:'rx', 3:'rt', 4:'rs', 5:'ro*', 6:'rx*', 7:'rt*', 8:'rs*',9:'go', 10:'gx', 11:'gt', 12:'gs', 13:'go*', 14:'gx*', 15:'gt*', 16:'gs*'}
@@ -23,7 +26,7 @@ class Game():
                             'cross':[2, 6, 10, 14]}
         
         
-        self.__enableHuman = False
+        self.__enableHuman = enableHuman
         self.__currentPlayer = 0
         self.__running = False
         self.__lim = [0,1,2,3]
@@ -38,6 +41,7 @@ class Game():
     def __gameLoop(self):
         while(self.__running):  
             
+            
             # self.__printBoard()
             # sleep(0.2)
             self.__selectPiece()
@@ -50,11 +54,11 @@ class Game():
     
     
     def __printBoard(self):
+        system('cls')
         print("\n\n\n")
         print("current player: %i"% self.__currentPlayer, end='')
         print("\n\n\n")
-        
-       
+              
         
         for y in self.__gameBoard:
             for x in y:
@@ -94,7 +98,7 @@ class Game():
                 print("%i. " % x, self.__pieceDict[x])             
            
             piece = self.__check(input("select piece from available(1-16): "), self.__availablePieces)
-        else:
+        else:   
             piece = np.random.choice(self.__availablePieces)
         
         self.__availablePieces.remove(piece)
@@ -150,16 +154,16 @@ class Game():
                     if(self.__gameBoard[y][x] in self.__winScenario[scenario]):    #horizontal checks
                         horiPoints[scenario] += 1
                         if(horiPoints[scenario] > 3):
-                            self.__printBoard()
-                            print("%s horizontal win" % scenario)
+                            # self.__printBoard()
+                            # print("%s horizontal win" % scenario)
                             trainPack['win'].append(np.copy(self.__gameBoard))
                             self.__running = False
                         
                     if(self.__gameBoard.T[y][x] in self.__winScenario[scenario]):  #vertical checks
                         vertPoints[scenario] += 1
                         if(vertPoints[scenario] > 3):
-                            self.__printBoard()
-                            print("player %s wins with a %s vertical play!" % (self.__currentPlayer, scenario))
+                            # self.__printBoard()
+                            # print("player %s wins with a %s vertical play!" % (self.__currentPlayer, scenario))
                             trainPack['win'].append(np.copy(self.__gameBoard))
                             self.__running = False
         
@@ -173,9 +177,10 @@ class Game():
                 if(d in self.__winScenario[scenario]):  
                     diagPoints[scenario] += 1
                     if(diagPoints[scenario] > 3):
-                        self.__printBoard()
-                        print("player %s wins with a %s diagonal play!" % (self.__currentPlayer, scenario))
+                        # self.__printBoard()
+                        # print("player %s wins with a %s diagonal play!" % (self.__currentPlayer, scenario))
                         trainPack['win'].append(np.copy(self.__gameBoard))
+                        winTrack[scenario] += 1
                         self.__running = False
             
             diagPoints = {'red':0, 'green':0, 'square':0, 'circle':0, 'triangle':0, 'cross':0, 'dot':0}  
@@ -183,9 +188,10 @@ class Game():
                 if(d in self.__winScenario[scenario]):  
                     diagPoints[scenario] += 1
                     if(diagPoints[scenario] > 3):
-                        self.__printBoard()
-                        print("player %s wins with a %s diagonal play!" % (self.__currentPlayer, scenario))
+                        # self.__printBoard()
+                        # print("player %s wins with a %s diagonal play!" % (self.__currentPlayer, scenario))
                         trainPack['win'].append(np.copy(self.__gameBoard))
+                        winTrack[scenario] += 1
                         self.__running = False
                         
        
@@ -193,9 +199,10 @@ class Game():
                 
                 
         if(len(self.__availablePieces) < 1 and self.__running):
-            self.__printBoard()
-            print("DRAW!")
+            # self.__printBoard()
+            # print("DRAW!")
             trainPack['win'].append(np.copy(self.__gameBoard))
+            winTrack['draw'] += 1
             self.__running = False   
         
      
