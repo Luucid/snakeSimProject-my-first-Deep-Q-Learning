@@ -1,8 +1,9 @@
 import numpy as np
 from time import sleep
+import pandas as pd
 
 
-
+trainPack = {'win': []}
 
 class Game():
     def __init__(self):
@@ -151,6 +152,7 @@ class Game():
                         if(horiPoints[scenario] > 3):
                             self.__printBoard()
                             print("%s horizontal win" % scenario)
+                            trainPack['win'].append(np.copy(self.__gameBoard))
                             self.__running = False
                         
                     if(self.__gameBoard.T[y][x] in self.__winScenario[scenario]):  #vertical checks
@@ -158,6 +160,7 @@ class Game():
                         if(vertPoints[scenario] > 3):
                             self.__printBoard()
                             print("player %s wins with a %s vertical play!" % (self.__currentPlayer, scenario))
+                            trainPack['win'].append(np.copy(self.__gameBoard))
                             self.__running = False
         
             
@@ -172,6 +175,7 @@ class Game():
                     if(diagPoints[scenario] > 3):
                         self.__printBoard()
                         print("player %s wins with a %s diagonal play!" % (self.__currentPlayer, scenario))
+                        trainPack['win'].append(np.copy(self.__gameBoard))
                         self.__running = False
             
             diagPoints = {'red':0, 'green':0, 'square':0, 'circle':0, 'triangle':0, 'cross':0, 'dot':0}  
@@ -181,6 +185,7 @@ class Game():
                     if(diagPoints[scenario] > 3):
                         self.__printBoard()
                         print("player %s wins with a %s diagonal play!" % (self.__currentPlayer, scenario))
+                        trainPack['win'].append(np.copy(self.__gameBoard))
                         self.__running = False
                         
        
@@ -190,7 +195,12 @@ class Game():
         if(len(self.__availablePieces) < 1 and self.__running):
             self.__printBoard()
             print("DRAW!")
+            trainPack['win'].append(np.copy(self.__gameBoard))
             self.__running = False   
+        
+     
+            
+            
                     
                 
                 
