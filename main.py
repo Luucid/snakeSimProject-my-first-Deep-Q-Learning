@@ -1,24 +1,24 @@
 from GameClass import Game
-from GameClass import winTrack
-# import tensorflow as tf
-# import tensorflow.keras as keras
-from time import sleep
+# from NetworkModule import Agent
+
 # from GameClass import trainPack
+# agent = Agent()
 
-
-# game = Game(True)
+game = Game()
 # game.startGame()
 
+session = []
 
 matches = 10000
-for i in range(matches):
-    # print("iteration: %i" % i)
-    if(i%100 == 0):
-        print(i)
+# for i in range(matches):
+game.startGame()
+while(game.getStatus):
+    # agent.updateMemory(game.tick())
+    # print(game.nextMove())
+    session.append(game.nextMove())
+#do someting clever.
+print(session)
     
-    game = Game()
-    game.startGame()
-    
-print(winTrack)
+
 
 
