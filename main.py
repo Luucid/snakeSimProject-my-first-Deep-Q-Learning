@@ -1,23 +1,25 @@
-from GameClass import Game
-# from NetworkModule import Agent
+from simulation import SnakeSim
+from NetworkModule import Agent
+from os import system
+from time import sleep
 
-# from GameClass import trainPack
-# agent = Agent()
 
-game = Game()
-# game.startGame()
 
-session = []
 
-matches = 10000
-# for i in range(matches):
-game.startGame()
-while(game.getStatus):
-    # agent.updateMemory(game.tick())
-    # print(game.nextMove())
-    session.append(game.nextMove())
-#do someting clever.
-print(session)
+
+sim = SnakeSim()
+
+agent = Agent(gamma=0.96, actions=sim.world.getSnake().moves, epsilon=0.1, batchSize=128, inputDims=(3,8))
+
+n=100
+
+
+for i in range(n):
+    while sim.gameTick():
+        agent.updateMemory(sim.getMemory())
+        sleep(0.1)
+        system('cls')
+    sim.resetGame()
     
 
 
