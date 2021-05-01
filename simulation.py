@@ -5,8 +5,8 @@ import numpy as np
 
 class GameMap():
     def __init__(self, x=16, y=16, stoneChance=0.0):
-        self.__worldBlocks = {'ground':0, 'stone':1, 'pit':2, 'food':8, 'snakeHead':16, 'snakeTail':17}
-        self.blockVisual = {0:' ', 1:'#', 2:'҈', 8:'@', 16:'0', 17:'¤', 20:'-'}
+        self.__worldBlocks = {'ground':0, 'stone':1, 'pit':2, 'food':8,'mouse':9, 'snakeHead':16, 'snakeTail':17}
+        self.blockVisual = {0:' ', 1:'█', 2:'҈', 8:'ѽ',9:'ϕ', 16:'☻', 17:'•'}
         self.__stoneChance = stoneChance
         
       
@@ -69,17 +69,18 @@ class GameMap():
                     
         
     
-    def addFood(self, n):
+    def addFood(self, n, kind='food'):
         for i in range(n):
             xFood = np.random.randint(1, self.__width-1)
             yFood = np.random.randint(1, self.__height-1)
             
             if self.__map[yFood][xFood] == self.__worldBlocks['ground']:
-                self.__map[yFood][xFood] = self.__worldBlocks['food']
+                self.__map[yFood][xFood] = self.__worldBlocks[kind]
             else:
                 xFood = np.random.randint(1, self.__width-1)
                 yFood = np.random.randint(1, self.__height-1)
-            
+     
+
         
     def printWorld(self):
         
@@ -87,6 +88,22 @@ class GameMap():
             for tile in row:
                 print(self.blockVisual[tile], end=' ')
             print("")
+            
+            
+    def snakeView(self):
+        sv = self.__animalList[0].getView()
+        # sh = self.animalList[0].getPos('head')
+        # sb = self.animalList[0].getPos('body')
+        
+        for row in sv:
+            for tile in row:
+                print(self.blockVisual[tile], end=' ')
+            print("")
+        
+        
+        
+        
+        
              
                      
     def getTile(self, x, y):
@@ -115,11 +132,14 @@ class Sight():
         self.__sFov = sFov   #increase width of vision with per n rangeStep
         self.__sRange = sRange #n tiles visible forward
         self.__view = np.zeros((sRange, sFov))
+
  
         
     
     def getView(self):
         return self.__view
+    
+
         
     def updateView(self, pos, ori, world):
         
@@ -158,8 +178,7 @@ class Sight():
            
             
             
-                
-        
+            
               
            
 
@@ -176,6 +195,7 @@ class Snake():
         self.bestHp = self.__health
         self.score = self.bestHp - 100
         self.foodEaten = 0
+        self.miceEaten = 0
         self.bodyParts = 1
         self.lastReward = 0
         
@@ -239,15 +259,23 @@ class Snake():
             self.lastReward = 100
             self.foodEaten += 1
             self.__health += 100
+            self.__world.addFood(1)
+            
+        elif tile == self.__world.getBlock('mouse'): #+500 on mouse.
+            self.lastReward = 500
+            self.miceEaten += 1
+            self.__health += 500
+            self.__world.addFood(1, 'mouse')
+            
         elif tile == self.__world.getBlock('pit'): #death on pit.
             self.lastReward = self.__health*(-1)
             self.__health = 0
         elif tile == self.__world.getBlock('stone'): #-100 on stone
-            self.lastReward = -100
-            self.__health -= 100
+            self.lastReward = -200
+            self.__health -= 200
         else:
-            self.lastReward = -1
-            self.__health -= 1 #punish each step without food.
+            self.lastReward = -5
+            self.__health -= 5 #punish each step without food.
         
         if self.__health >= self.__hpUpgrade:
             self.__hpDowngrade += 100
@@ -291,8 +319,6 @@ class Snake():
             return 'snakeTail'
         
     def getView(self):
-        # cv = self.sight.getView(self.__navigator.getPos(), self.__navigator.getOri())
-        # cv = self.sight.getView()
         return np.copy(self.__currentView)
    
     def printView(self, world):
@@ -342,19 +368,23 @@ class Position():
     
 
 class SnakeSim():
-    def __init__(self, x=32, y=32, sc = 0.0):
+    def __init__(self, x=40, y=40, sc = 0.01, fc = 0.02):
         self.sc = sc
         self.mapX = x
         self.mapY = y
         self.world = GameMap(x=self.mapX, y=self.mapY, stoneChance=self.sc)
         self.snake = Snake(16, 16, self.world)
         self.world.spawnAnimal(self.snake)
-        self.world.addFood(5)
+        self.world.addFood(10)
+        self.world.addFood(3, 'mouse')
+        self.foodChance = fc
         # self.world.printWorld()
 
         
     
-    def gameTick(self, action):          
+    def gameTick(self, action):     
+        if np.random.random() < self.foodChance:
+            self.world.addFood(3)
         self.world.updateWorld(action)
         
     def alive(self):
@@ -369,6 +399,8 @@ class SnakeSim():
     
     def getFoodEaten(self):
         return self.snake.foodEaten
+    def getMiceEaten(self):
+        return self.snake.miceEaten
     
     def getScore(self):
         return self.snake.score
@@ -397,25 +429,13 @@ class SnakeSim():
         self.world = GameMap(x=self.mapX, y=self.mapY, stoneChance=self.sc)
         self.snake = Snake(16, 16, self.world)
         self.world.spawnAnimal(self.snake)
-        self.world.addFood(5)
+        self.world.addFood(20)
+        self.world.addFood(2, 'mouse')
         # self.world.printWorld()
         
    
         
-   #####UNCOMMENT FOR QUICK TEST#######
-        
-# from time import sleep       
-# from os import system  
 
-# sim = SnakeSim()
-    
-# while sim.alive():  
-#     sleep(0.2)
-#     system('cls')
-#     sim.gameTick(np.random.choice(sim.snake.actions))
-    
-
-# sleep(10)
     
     
     
