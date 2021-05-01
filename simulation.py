@@ -174,6 +174,7 @@ class Snake():
         self.__health = 100 #train on achieving highest HP
         
         self.bestHp = self.__health
+        self.score = self.bestHp - 100
         self.foodEaten = 0
         self.bodyParts = 1
         self.lastReward = 0
@@ -259,6 +260,7 @@ class Snake():
             self.removeTail()
         if self.__health > self.bestHp:
             self.bestHp = self.__health
+            self.score = self.bestHp-100
             
         
     
@@ -369,12 +371,12 @@ class SnakeSim():
         return self.snake.foodEaten
     
     def getScore(self):
-        return self.snake.bestHp
+        return self.snake.score
     
     
     def getState(self):
          
-        inputHealth = self.snake.getHealth()
+        inputHealth = self.snake.score
         inputVision = self.snake.getView()
         
         state = np.zeros(22) 

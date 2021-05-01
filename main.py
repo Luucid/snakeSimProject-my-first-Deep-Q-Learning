@@ -5,7 +5,7 @@ from time import sleep
 import keyboard
 
 
-loadModel = False
+loadModel = True
 
 sim = SnakeSim()
 
@@ -18,11 +18,12 @@ agent.prepNetworksForLoad(state)
 if(loadModel):
     agent.loadModel()
     
-n=100
+n=5000
 scores = []
 food = []
 matchNumbers = []
 qValues = []
+doPrint = False
 
 for i in range(n):
     if(i == 3000):
@@ -39,10 +40,10 @@ for i in range(n):
     state = sim.getState()
     
     while alive:
-        if(keyboard.is_pressed('VK_RIGHT')):
-            doPrint = True
-        else:
-            doPrint = False
+        if(keyboard.is_pressed('p')):
+            sleep(0.5)
+            doPrint = not doPrint
+        
         
         # system('cls')
         action,Q = agent.chooseAction(state)
@@ -58,6 +59,7 @@ for i in range(n):
             system('cls')
             sim.world.printWorld()
             sleep(0.1)
+        
     
     score = sim.getScore()
     scores.append(score)
@@ -68,12 +70,8 @@ for i in range(n):
     print("Score: %i" % scores[i])
     print("Food: %i" % food[i])
     print("----------------\n")
-     
-    
-    
- 
-        
-        
+    if(keyboard.is_pressed("Esc")):
+            break
     sim.resetGame()
 
 inp = input("Save model (y/n): ").lower()

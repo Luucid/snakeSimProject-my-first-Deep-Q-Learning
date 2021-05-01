@@ -19,9 +19,9 @@ class DQN(keras.Model): #deep Q network
         
         self.inputLayer = tf.keras.layers.Flatten(input_shape=self.inputShape, dtype=np.int32)
         
-        self.dense1 = tf.keras.layers.Dense(128, activation='sigmoid')
-        self.dense2 = tf.keras.layers.Dense(128, activation='sigmoid')
-        self.dense3 = tf.keras.layers.Dense(64, activation='sigmoid')
+        self.dense1 = tf.keras.layers.Dense(64, activation='sigmoid')
+        self.dense2 = tf.keras.layers.Dense(64, activation='sigmoid')
+        self.dense3 = tf.keras.layers.Dense(32, activation='sigmoid')
         
         self.outputLayer = tf.keras.layers.Dense(self.nActions, activation='linear')
         
@@ -88,7 +88,7 @@ class ReplayBuffer():
 class Agent:
     def __init__(self, lr, gamma, actions, epsilon, 
                  batchSize, inputDims, epsilonDec=1e-3,
-                 epsilonMin=0.01 ,memSize=10000, replace=100):
+                 epsilonMin=0.01,fname='dqn' ,memSize=10000, replace=100):
         
         self.actionSpace = np.array([0, 1, 2])
         self.gamma = gamma
@@ -104,7 +104,8 @@ class Agent:
 
         self.qEval.compile(optimizer=kOptimizers.Adam(learning_rate=lr),loss='mean_squared_error')
         self.qNext.compile(optimizer=kOptimizers.Adam(learning_rate=lr),loss='mean_squared_error')
-
+        
+        self.fname = fname
 
 
 
