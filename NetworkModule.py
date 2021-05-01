@@ -1,5 +1,7 @@
 import tensorflow as tf
 import tensorflow.keras as keras
+import tensorflow.keras.optimizers as kOptimizers
+
 import numpy as np
 
 try:
@@ -25,20 +27,25 @@ class DQN(keras.Model): #deep Q network
         
 
     def call(self, state):
+        # print("in call: \n\n")
         x = self.inputLayer(state)
-        
-        x = self.denseLayer1(x)
-        x = self.denseLayer2(x)
-        x = self.denseLayer3(x)
-        
-        return self.outputLayer(x)
+        # print("inputLayer: ", x)
+        x = self.dense1(x)
+        # print("dense1: ", x)
+        x = self.dense2(x)
+        # print("dense2: ", x)
+        x = self.dense3(x)
+        # print("dense3: ", x)
+        x = self.outputLayer(x)
+        # print("outputLayer: ", x)
+        return x
         
 
 
 
 
 class ReplayBuffer():
-    def __init__(self,maxSize,inputShape):
+    def __init__(self, maxSize, inputShape):
         self.memSize = maxSize
         self.memCntr = 0
         self.stateMemory = np.zeros((self.memSize,*inputShape),dtype=np.float32)
@@ -49,18 +56,18 @@ class ReplayBuffer():
         self.terminalMemory = np.zeros(self.memSize,dtype=np.bool)
         
         
-    def storeTransition(self,state, action,reward,state_,done):
+    def storeTransition(self,state, action,reward,state_,alive):
         index = self.memCntr % self.memSize
         
-        print(reward)
-        print(index)
-        print(state)
+        # print(reward)
+        # print(index)
+        # print(state)
         
         self.stateMemory[index] = state
         self.newStateMemory[index] = state_
         self.rewardMemory[index] = reward
         self.actionMemory[index] = action
-        self.terminalMemory[index] = done
+        self.terminalMemory[index] = not alive
         
         self.memCntr += 1
     
@@ -79,23 +86,24 @@ class ReplayBuffer():
 
 
 class Agent:
-    def __init__(self, gamma, actions, epsilon, 
+    def __init__(self, lr, gamma, actions, epsilon, 
                  batchSize, inputDims, epsilonDec=1e-3,
                  epsilonMin=0.01 ,memSize=10000, replace=100):
         
-        self.actionSpace = actions
+        self.actionSpace = np.array([0, 1, 2])
         self.gamma = gamma
         self.epsilon = epsilon
         self.epsilonDec = epsilonDec
         self.epsilonMin = epsilonMin
         self.replace = replace
         self.batchSize = batchSize
-        self.memory = ReplayBuffer()
-        
-        self.qna = DQN()
-        self.qnb = DQN()
+        self.memory = ReplayBuffer(memSize, inputDims)
+        self.learnStepCounter = 0
+        self.qEval = DQN(len(actions),inputDims)
+        self.qNext = DQN(len(actions),inputDims)
 
-
+        self.qEval.compile(optimizer=kOptimizers.Adam(learning_rate=lr),loss='mean_squared_error')
+        self.qNext.compile(optimizer=kOptimizers.Adam(learning_rate=lr),loss='mean_squared_error')
 
 
 
@@ -107,16 +115,21 @@ class Agent:
         state = np.array([observation])
         networkActionQ = self.qEval(state)[0]
         networkAction = tf.math.argmax(networkActionQ).numpy()
+        # networkAction = 
+       
+        
         if(np.random.random() < self.epsilon):
             #chose random action that is not the same as networkAction
             action = np.random.choice(self.actionSpace[self.actionSpace != networkAction])
-            
+            # print("rand action: ",action)
         else:
             state = np.array([observation])
             action = networkAction
             #actions = self.qEval(net)
-            #print(actions)
-            #action = tf.math.argmax(actions,axis=1).numpy()[0]
+            # print("network action: ",action)
+            # action = tf.math.argmax(actions,axis=1).numpy()[0]
+
+        
             
         return action,networkActionQ.numpy()[action]
 
