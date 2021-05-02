@@ -5,8 +5,8 @@ import numpy as np
 
 class GameMap():
     def __init__(self, x=16, y=16, stoneChance=0.0):
-        self.__worldBlocks = {'ground':0, 'stone':1, 'pit':2, 'food':8,'mouse':9, 'snakeHead':16, 'snakeTail':3}
-        self.blockVisual = {0:' ', 1:'█', 2:'҈', 8:'ѽ',9:'ϕ', 16:'☻', 3:'•'}
+        self.__worldBlocks = {'ground':0, 'stone':1, 'pit':2, 'specialFruit':7,'water':8,'mouse':9, 'snakeHead':16, 'snakeTail':17, 'snakeEyes':18}
+        self.blockVisual = {0:'░', 1:'█', 2:'҈',7:'ꝏ', 8:'ѽ',9:'ϕ', 16:'☻', 17:'•', 18:'░'}
         self.__stoneChance = stoneChance
         
       
@@ -15,6 +15,8 @@ class GameMap():
         self.__width = x
         self.__map = np.zeros((y, x))
         self.__generateWorld()
+        
+      
         
         
     def __generateWorld(self):
@@ -69,32 +71,35 @@ class GameMap():
                     
         
     
-    def addFood(self, n, kind='food'):
+    def addFood(self, n, kind='water'):
         for i in range(n):
             xFood = np.random.randint(1, self.__width-1)
             yFood = np.random.randint(1, self.__height-1)
             
-            if self.__map[yFood][xFood] == self.__worldBlocks['ground']:
-                self.__map[yFood][xFood] = self.__worldBlocks[kind]
-            else:
-                xFood = np.random.randint(3, self.__width-3)
-                yFood = np.random.randint(3, self.__height-3)
+            while self.__map[yFood][xFood] != self.__worldBlocks['ground']:
+                xFood = np.random.randint(1, self.__width-1)
+                yFood = np.random.randint(1, self.__height-1)
+            self.__map[yFood][xFood] = self.__worldBlocks[kind]
+            # else:
+            #     xFood = np.random.randint(3, self.__width-3)
+            #     yFood = np.random.randint(3, self.__height-3)
      
 
         
     def printWorld(self):
         print(self.__animalList[0].getHealth())
-        for row in self.__map:
-            for tile in row:
+        for y, row in enumerate(self.__map):
+            for x, tile in enumerate(row):   
                 print(self.blockVisual[tile], end=' ')
+                # if self.__map[y][x] == self.__worldBlocks['snakeEyes']:
+                #     self.__map[y][x] = self.__worldBlocks['ground']  
             print("")
             
+    
             
     def snakeView(self):
         sv = self.__animalList[0].getView()
-        # sh = self.animalList[0].getPos('head')
-        # sb = self.animalList[0].getPos('body')
-        
+        print(' ','▲', ' ')
         for row in sv:
             for tile in row:
                 print(self.blockVisual[tile], end=' ')
@@ -111,6 +116,12 @@ class GameMap():
     
     def setTile(self, pos, tile):
         self.__map[pos[1]][pos[0]] = self.__worldBlocks[tile]
+    
+    def setVision(self, pos, tile):
+        
+        if pos[0] < self.__width and pos[0] > 0 and pos[1] < self.__height and pos[1] > 0:
+            if self.__map[pos[1]][pos[0]] == self.getBlock('ground'):
+                self.__map[pos[1]][pos[0]] = self.__worldBlocks[tile]
         
     def updateWorld(self, action): 
         for animal in self.__animalList:
@@ -128,14 +139,14 @@ class GameMap():
 
 
 class Sight():
-    def __init__(self, sFov=3, sRange=7):
-        self.__sFov = sFov   #increase width of vision with per n rangeStep
+    def __init__(self, world, sFov=5, sRange=7):
+        self.__sFov = sFov   #width of vision
         self.__sRange = sRange #n tiles visible forward
         self.__view = np.zeros((sRange, sFov))
-        self.coordView = np.array([[[0, 0], [0, 0], [0, 0]]]*sRange)
-        # print(self.__coordView)
-        # from time import sleep
-        # sleep(10)
+        self.__leftMidRight = np.array([0, 0, 0, 0, 0])
+        # self.__leftMidRight = np.array([0, 0, 0])
+        # self.coordView = np.array([[[0, 0], [0, 0], [0, 0], [0, 0], [0, 0]]]*sRange)
+        self.world = world
 
  
         
@@ -143,46 +154,56 @@ class Sight():
     def getView(self):
         return self.__view
     
+    
+    def setLeftMidRight(self, vision, pos, ori):
+        #if horizontal, vision == 1, else vision == 0.  0-1 = -1, since only two pos in pos, -1 == last element. 
+        if vision == 1: #horizontal
+            self.__leftMidRight[0] = pos - ori*2
+            self.__leftMidRight[1] = pos - ori
+            self.__leftMidRight[2] = pos
+            self.__leftMidRight[3] = pos + ori
+            self.__leftMidRight[4] = pos + ori*2
+        else:   
+            self.__leftMidRight[4] = pos - ori*2
+            self.__leftMidRight[3] = pos - ori
+            self.__leftMidRight[2] = pos
+            self.__leftMidRight[1] = pos + ori
+            self.__leftMidRight[0] = pos + ori*2
 
         
     def updateView(self, pos, ori, world):
         
-        getDir = [True, True, True]
-        
+        getDir = [True, True, True, True, True]     
         vision = abs(ori[0])
-        # vision = 1 if(ori[1] == 0) else 0
-        leftMidRight = np.array([0, 0, 0])
+
         
-        # print("ori: ", ori, " | vision: ", vision)
-        
-        if vision == 1: #horizontal
-            leftMidRight[0] = pos[vision] - ori[vision-1]
-            leftMidRight[1] = pos[vision]
-            leftMidRight[2] = pos[vision] + ori[vision-1] #if horizontal, vision == 1, else vision == 0.  0-1 = -1, since only two pos in pos, -1 == last element. 
-        else:
-            leftMidRight[2] = pos[vision] - ori[vision-1]
-            leftMidRight[1] = pos[vision]
-            leftMidRight[0] = pos[vision] + ori[vision-1] 
-        
+        self.setLeftMidRight(vision, pos[vision], ori[vision-1])
+ 
         tmpMid = pos[vision-1]
         for y, row in enumerate(self.__view):
-            # tmpMid = pos[vision-1]
-            for i in range(3):
+            for i in range(self.__sFov):
                 if getDir[i]:      
                     
                     if vision == 1:
-                        self.__view[y][i] = world.getTile(tmpMid, leftMidRight[i])
-                        self.coordView[y][i] = np.array([tmpMid, leftMidRight[i]])
+                        self.__view[y][i] = world.getTile(tmpMid, self.__leftMidRight[i])
+                        # self.coordView[y][i] = np.array([tmpMid, self.__leftMidRight[i]])
                     else:
-                        self.__view[y][i] = world.getTile(leftMidRight[i], tmpMid)  
-                        self.coordView[y][i] = np.array([leftMidRight[i], tmpMid])
+                        self.__view[y][i] = world.getTile(self.__leftMidRight[i], tmpMid)  
+                        # self.coordView[y][i] = np.array([self.__leftMidRight[i], tmpMid])
                     
-                    if self.__view[y][i] == 2 or self.__view[y][i] == 1:
+                    if self.__view[y][i] == world.getBlock('pit'):
                         getDir[i] = False
                 else:
                     self.__view[y][i] = world.getBlock('pit')                    
             tmpMid += ori[vision-1]  
-                # tmpMid += ori[vision-1]
+        
+        
+        
+        
+        # for row in self.coordView:
+        #     for v in row:
+        #         self.world.setVision(v, 'snakeEyes')
+                
            
             
             
@@ -196,14 +217,23 @@ class Snake():
         self.__legalMoves = {3:'left', 0:'forward', 1:'right'}
         self.__navigator = Position(x, y)
         self.__world = world
+        
+        
+        self.headVisual = ['▲','►','▼','◄']
+        
         ####################################################
         
         self.__health = 100 #train on achieving highest HP
         
         self.bestHp = self.__health
         self.score = self.bestHp - 100
-        self.foodEaten = 0
+        
+        self.waterEaten = 0
         self.miceEaten = 0
+        self.specialEaten = 0
+        self.rocksWithPower = 0
+        self.rocksWithoutPower = 0
+        
         self.bodyParts = 1
         self.lastReward = 0
         
@@ -213,9 +243,12 @@ class Snake():
         ####################################################
         self.__head = self.__navigator.getPos()
         self.__body = np.array([self.__navigator.getPos() - self.__navigator.getOri()])
-        self.sight = Sight()
-        self.sight.updateView(self.__head, self.__navigator.getOri(), world)
+        
+        self.sight = Sight(world)
+        self.sight.updateView(self.__head, self.__navigator.getOri(), world)     
         self.__currentView = self.sight.getView()
+        # self.coordView = self.sight.coordView
+        self.rockImmunity = 0
         self.hasBody = True
         self.alive = True
         
@@ -226,6 +259,12 @@ class Snake():
     def updateView(self):
        self.sight.updateView(self.__head, self.__navigator.getOri(), self.__world)
        self.__currentView = self.sight.getView()
+       if self.rockImmunity > 0:
+           self.__world.blockVisual[16] = '☼'
+       else:
+           self.__world.blockVisual[16] = self.headVisual[self.__navigator.getdirectionIdx()]
+       
+       
         
     
     def move(self, action):        
@@ -246,10 +285,10 @@ class Snake():
         #move head.
         self.__navigator.update(self.__legalMoves[direction])
         self.__head = self.__navigator.getPos()
-        for b in self.__body:
-            if np.array_equal(self.__head, b): #if crash in tail, die.
-                self.lastReward = self.__health*(-1)
-                self.__health = 0
+        # for b in self.__body:
+        #     if np.array_equal(self.__head, b): #if crash in tail, die.
+        #         self.lastReward = self.__health*(-1)
+        #         self.__health = 0
      
         ##############################################################################
         self.calcReward(newBody, self.__world.getTile(self.__head[0], self.__head[1]))  
@@ -264,24 +303,38 @@ class Snake():
         
     def calcReward(self, bodyPart, tile):
         # print(self.bodyParts)
-        if tile == self.__world.getBlock('food'): #+100 on food.
+        if tile == self.__world.getBlock('water'): #+120 on water.
             self.lastReward = 120
-            self.foodEaten += 1
+            self.waterEaten += 1
             self.__health += 120
             self.__world.addFood(1)
             
-        elif tile == self.__world.getBlock('mouse'): #+500 on mouse.
+        elif tile == self.__world.getBlock('mouse'): #+250 on mouse.
             self.lastReward = 250
             self.miceEaten += 1
             self.__health += 250
             self.__world.addFood(1, 'mouse')
-            
+        elif tile == self.__world.getBlock('specialFruit'): #25 frames of rock-immunity, +500 reward.
+            self.lastReward = 500
+            self.specialEaten += 1
+            self.__health += 300
+            self.rockImmunity += 25
+            self.__world.addFood(1, 'specialFruit')
+          
+        elif tile == self.__world.getBlock('snakeTail'): #death on tail.
+            self.lastReward = self.__health*(-1)
+            self.__health = 0
         elif tile == self.__world.getBlock('pit'): #death on pit.
             self.lastReward = self.__health*(-1)
             self.__health = 0
         elif tile == self.__world.getBlock('stone'): #-100 on stone
-            self.lastReward = -200
-            self.__health -= 200
+            if self.rockImmunity > 0:
+                self.lastReward = +100
+                self.rocksWithPower += 1
+            else:
+                self.lastReward = -200
+                self.__health -= 200
+                self.rocksWithoutPower += 1
         else:
             self.lastReward = -1.2
             self.__health -= 1.2 #punish each step without food.
@@ -298,6 +351,8 @@ class Snake():
         if self.__health > self.bestHp:
             self.bestHp = self.__health
             self.score = self.bestHp-100
+        if self.rockImmunity > 0:
+            self.rockImmunity -= 1
             
         
     
@@ -331,17 +386,23 @@ class Snake():
         return np.copy(self.__currentView)
    
     def printView(self):
-        # self.updateView()
-        # print(self.sight.coordView)
-        # print(self.__currentView)
         print("\n----------------\n")
+        body = True
         for row in self.__currentView:
             print()
+            if body:
+                print('░','░','•', '░', '░') 
+                print('░','░','▼', '░', '░')
+                body = False
             for tile in row:
                 print(self.__world.blockVisual[tile], end=' ')
             print(end=' ')
+   
         
-    
+           
+        
+        
+   
         
 
 
@@ -349,7 +410,7 @@ class Position():
     def __init__(self, sx=1, sy=1):
         self.__legalMoves = {'left':3, 'forward':0, 'right':1}
         
-        self.__direction = {'North':np.array([0, -1]), 
+        self.direction = {'North':np.array([0, -1]), 
                             'East':np.array([1, 0]), 
                             'South':np.array([0, 1]), 
                             'West':np.array([-1, 0])}
@@ -357,7 +418,7 @@ class Position():
         self.__dirList = ['North', 'East', 'South', 'West']
         self.__curDir = 0    
         self.__curPos = np.array([sx, sy], dtype=np.int32)
-        self.__orientation = self.__direction['North']
+        self.__orientation = self.direction['North']
  
     def update(self, move):
         self.__reorientate(move) 
@@ -365,7 +426,7 @@ class Position():
         
     def __reorientate(self, move):
         self.__curDir = (self.__curDir + self.__legalMoves[move]) % 4
-        self.__orientation = self.__direction[self.__dirList[self.__curDir]]
+        self.__orientation = self.direction[self.__dirList[self.__curDir]]
             
 
     def getPos(self):
@@ -374,21 +435,24 @@ class Position():
 
     def getOri(self):
         return self.__orientation
+    def getdirectionIdx(self):
+        return self.__curDir
         
     
   
     
 
 class SnakeSim():
-    def __init__(self, x=25, y=25, sc = 0.0, fc = 0.0):
+    def __init__(self, x=32, y=32, sc = 0.1, fc = 0.001):
         self.sc = sc
         self.mapX = x
         self.mapY = y
         self.world = GameMap(x=self.mapX, y=self.mapY, stoneChance=self.sc)
         self.snake = Snake(16, 16, self.world)
         self.world.spawnAnimal(self.snake)
-        self.world.addFood(2)
-        self.world.addFood(2, 'mouse')
+        self.world.addFood(x//4, 'water')
+        self.world.addFood(x//8, 'mouse')
+        self.world.addFood(2, 'specialFruit')
         self.foodChance = fc
         # self.world.printWorld()
 
@@ -409,21 +473,28 @@ class SnakeSim():
         state = self.getState()
         return reward, state, alive
     
-    def getFoodEaten(self):
-        return self.snake.foodEaten
+    def getWaterEaten(self):
+        return self.snake.waterEaten
+    
+    def getSpecialEaten(self):
+        return self.snake.specialEaten
+    
     def getMiceEaten(self):
         return self.snake.miceEaten
     
     def getScore(self):
         return self.snake.score
-    
+    def getRocksCrushed(self, power=True):
+        if power:
+            return self.snake.rocksWithPower
+        return self.snake.rocksWithoutPower
     
     def getState(self):
          
-        inputHealth = self.snake.getHealth()-100
+        inputHealth = self.snake.getHealth()
         inputVision = self.snake.getView()
         
-        state = np.zeros(22) 
+        state = np.zeros(36) 
         
         i=0
         for row in inputVision:
@@ -441,8 +512,9 @@ class SnakeSim():
         self.world = GameMap(x=self.mapX, y=self.mapY, stoneChance=self.sc)
         self.snake = Snake(16, 16, self.world)
         self.world.spawnAnimal(self.snake)
-        self.world.addFood(2)
-        self.world.addFood(2, 'mouse')
+        self.world.addFood(self.mapX//8, 'water')
+        self.world.addFood(self.mapX//4, 'mouse')
+        self.world.addFood(2, 'specialFruit')
         # self.world.printWorld()
         
    
@@ -450,6 +522,22 @@ class SnakeSim():
 
     
     
+
+# def setLeftMidRight(self, vision, pos, ori):
+#         if vision == 1: #horizontal
+#             self.__leftMidRight[0] = pos - ori
+#             self.__leftMidRight[1] = pos
+#             self.__leftMidRight[2] = pos + ori
+#         else:             
+#             self.__leftMidRight[2] = pos - ori
+#             self.__leftMidRight[1] = pos
+#             self.__leftMidRight[0] = pos + ori
     
-    
-    
+# if vision == 1: #horizontal
+  #     leftMidRight[0] = pos[vision] - ori[vision-1]
+  #     leftMidRight[1] = pos[vision]
+  #     leftMidRight[2] = pos[vision] + ori[vision-1] 
+  # else:
+  #     leftMidRight[2] = pos[vision] - ori[vision-1]
+  #     leftMidRight[1] = pos[vision]
+  #     leftMidRight[0] = pos[vision] + ori[vision-1]  

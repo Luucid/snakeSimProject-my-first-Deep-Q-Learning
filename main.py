@@ -17,32 +17,35 @@ sim = SnakeSim()
 
 
 
-agent = Agent(fname='qtest', lr=1e-3, gamma=0.97, actions=sim.world.getSnake().actions, epsilon=eps, batchSize=128, inputDims=(1,22))
+agent = Agent(fname='Q5wStoneSuperFruit', lr=1e-3, gamma=0.97, actions=sim.world.getSnake().actions, epsilon=eps, batchSize=128, inputDims=(1,36))
 state = sim.getState()
 agent.prepNetworksForLoad(state)
 
 if(loadModel):
     agent.loadModel()
     
-n = 1000000
+n = 100000
 scores = []
-food = []
+water = []
 mouse = []
+special = []
+rocks = []
+rocksPower = []
 matchNumbers = []
 qValues = []
 
 doPrint = False
 
 for i in range(n):
-    # if(i == 1000):
-    #     print("Changed epsilonMin to",0.2)
-    #     agent.changeEpsMin(0.2)
-    # elif(i == 2000):
-    #     print("Changed epsilonMin to",0.1)
-    #     agent.changeEpsMin(0.1)
-    # elif(i == 10000):
-    #     print("Changed epsilonMin to",0.05)
-    #     agent.changeEpsMin(0.05)
+    if(i == 1000):
+        print("Changed epsilonMin to",0.2)
+        agent.changeEpsMin(0.2)
+    elif(i == 2000):
+        print("Changed epsilonMin to",0.1)
+        agent.changeEpsMin(0.1)
+    elif(i == 5000):
+        print("Changed epsilonMin to",0.05)
+        agent.changeEpsMin(0.05)
     if(i == 25000):
         print("Changed epsilonMin to",0.005)
         agent.changeEpsMin(0.005)
@@ -71,21 +74,27 @@ for i in range(n):
             sim.world.printWorld()
             print("\n-snakeView-\n")
             sim.snake.printView()
-            # sleep(3)
-            sleep(0.02)
+            # sleep(2)
+            sleep(0.04)
     
         
     
-    score = sim.getScore()
-    scores.append(score)
-    food.append(sim.getFoodEaten())   
+    # score = sim.getScore()
+    # scores.append(score)
+    water.append(sim.getWaterEaten())   
     mouse.append(sim.getMiceEaten())   
+    special.append(sim.getSpecialEaten())
+    rocks.append(sim.getRocksCrushed(power=False))
+    rocksPower.append(sim.getRocksCrushed(power=True))
     matchNumbers.append(i)
     print("----------------")
     print("Game %i ended." % i)
-    print("Score: %i" % scores[i])
-    print("Water: %i" % food[i])
+    # print("Q: %i" % qValues[i])
+    print("Water: %i" % water[i])
     print("Mouse: %i" % mouse[i])
+    print("special: %i" % special[i])
+    print("rocks with power: %i" % rocksPower[i])
+    print("rocks without power: %i" % rocks[i])
     print("----------------\n")
     if(keyboard.is_pressed("Esc")):
             break
@@ -95,11 +104,12 @@ inp = input("Save model (y/n): ").lower()
 if(inp == "y"):
      agent.saveModel()
 
-x = np.arange(len(scores))
-x1 = np.arange(len(food))
+# x = np.arange(len(scores))
+x1 = np.arange(len(water))
 x2 = np.arange(len(mouse))
+x3 = np.arange(len(special))
 
-plt.plot(x, scores, '-b', alpha=0.7)
-plt.plot(x1, food, '-r', alpha=0.7)
-plt.plot(x2, mouse, '-g', alpha=0.7)
+plt.plot(x1, water, '-b', alpha=0.7)
+plt.plot(x2, mouse, '-r', alpha=0.7)
+plt.plot(x3, special, '-g', alpha=0.7)
 plt.show()

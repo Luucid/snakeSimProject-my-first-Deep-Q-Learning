@@ -84,8 +84,8 @@ class ReplayBuffer():
 
 class Agent:
     def __init__(self, lr, gamma, actions, epsilon, 
-                 batchSize, inputDims, epsilonDec=1e-4,
-                 epsilonMin=0.01,fname='dqn' ,memSize=10000, replace=100):
+                 batchSize, inputDims, epsilonDec=1e-5,
+                 epsilonMin=0.4,fname='dqn-moreFood' ,memSize=10000, replace=100):
         
         self.actionSpace = np.array([0, 1, 2])
         self.gamma = gamma
@@ -117,7 +117,7 @@ class Agent:
        
         
         if(np.random.random() < self.epsilon): 
-            if self.epsilon < 0.5:
+            if self.epsilon < 0.2:
                 action = np.random.choice(self.actionSpace[self.actionSpace != networkAction]) #make sure all choices amount to 100%
             else:
                 action = np.random.choice(self.actionSpace) #give exploring more freedom in the beginning  

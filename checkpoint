@@ -1,2 +1,2 @@
-model_checkpoint_path: "qtest"
-all_model_checkpoint_paths: "qtest"
+model_checkpoint_path: "qtest5wide"
+all_model_checkpoint_paths: "qtest5wide"
