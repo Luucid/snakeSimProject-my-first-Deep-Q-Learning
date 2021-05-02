@@ -34,7 +34,7 @@ rocksPower = []
 matchNumbers = []
 qValues = []
 
-doPrint = True
+doPrint = False
 
 for i in range(n):
     if(i == 1000):

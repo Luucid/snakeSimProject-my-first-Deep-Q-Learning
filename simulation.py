@@ -224,7 +224,7 @@ class Snake():
         
         ####################################################
         
-        self.__health = 5000 #train on achieving highest HP
+        self.__health = 100 #train on achieving highest HP
         
         self.bestHp = self.__health
         self.score = self.bestHp - 100
