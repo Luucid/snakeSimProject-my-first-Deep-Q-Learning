@@ -1,9 +1,9 @@
 import tensorflow as tf
 import tensorflow.keras as keras
 import tensorflow.keras.optimizers as kOptimizers
-
+import keyboard
 import numpy as np
-
+from time import sleep
 ##learn and replayBuffer inspired by RunarEckholdt @ github
 
 class DQN(keras.Model): #deep Q network
@@ -14,18 +14,24 @@ class DQN(keras.Model): #deep Q network
         
         self.inputLayer = tf.keras.layers.Flatten(input_shape=self.inputShape, dtype=np.int32)
         
-        self.dense1 = tf.keras.layers.Dense(256, activation='sigmoid')
-        self.dense2 = tf.keras.layers.Dense(128, activation='sigmoid')
-        self.dense3 = tf.keras.layers.Dense(64, activation='sigmoid')
+        self.dense1 = tf.keras.layers.Dense(512, activation='sigmoid')
+        self.dense2 = tf.keras.layers.Dense(256, activation='sigmoid')
+        self.dense3 = tf.keras.layers.Dense(128, activation='sigmoid')
+        self.dense4 = tf.keras.layers.Dense(64, activation='sigmoid')
+        self.dense5 = tf.keras.layers.Dense(32, activation='sigmoid')
         
         self.outputLayer = tf.keras.layers.Dense(self.nActions, activation='linear')
         
 
     def call(self, state):
         x = self.inputLayer(state)
+        
         x = self.dense1(x)
         x = self.dense2(x)
         x = self.dense3(x)
+        x = self.dense4(x)
+        x = self.dense5(x) 
+        
         x = self.outputLayer(x)
         return x
         
@@ -54,6 +60,10 @@ class ReplayBuffer():
         self.actionMemory[index] = action
         self.terminalMemory[index] = not alive
         
+        if(keyboard.is_pressed('r')):
+            print("reward: ", reward)
+            sleep(0.2)
+        
         self.memCntr += 1
     
     def sampleBuffer(self, batchSize):
@@ -64,7 +74,9 @@ class ReplayBuffer():
         actions = self.actionMemory[batch]
         rewards = self.rewardMemory[batch]
         done = self.terminalMemory[batch]
+        
         return states,actions,rewards,newStates,done
+  
 
 
 
@@ -72,7 +84,7 @@ class ReplayBuffer():
 
 class Agent:
     def __init__(self, lr, gamma, actions, epsilon, 
-                 batchSize, inputDims, epsilonDec=1e-3,
+                 batchSize, inputDims, epsilonDec=1e-4,
                  epsilonMin=0.01,fname='dqn' ,memSize=10000, replace=100):
         
         self.actionSpace = np.array([0, 1, 2])
@@ -105,15 +117,18 @@ class Agent:
        
         
         if(np.random.random() < self.epsilon): 
-            action = np.random.choice(self.actionSpace[self.actionSpace != networkAction]) #make sure all choices amount to 100%
-            
-        else:
+            if self.epsilon < 0.5:
+                action = np.random.choice(self.actionSpace[self.actionSpace != networkAction]) #make sure all choices amount to 100%
+            else:
+                action = np.random.choice(self.actionSpace) #give exploring more freedom in the beginning  
+        else:  
             state = np.array([observation])
             action = networkAction
             
 
-        
-            
+        if(keyboard.is_pressed('.')):
+            print("networkAction: ", networkAction, " | choosen action: ", action)
+            sleep(0.2)
         return action,networkActionQ.numpy()[action]
 
 
@@ -135,28 +150,38 @@ class Agent:
         #predicting future rewards
         qNext = self.qNext(states_)
         
-        
+        # print(qNext)
         #getting the maximum reward from each state reward prediction
         qNext = tf.math.reduce_max(qNext, axis=1, keepdims=True).numpy()
+        # print(qNext)
+        # sleep(100)
         
         #predictiong q values for states before action
         qTarget = self.qEval(states).numpy()
- 
+        
+        
+        
         
         #itterates over each sample changing the q value for each action done
         # to be de possible best outcome of future actions
         for idx,terminal in enumerate(dones):
-            #print(idx)
+            # print(idx, terminal)
             if terminal:
                 qNext[idx] = 0.0
             qTarget[idx][actions[idx]] = rewards[idx] + self.gamma*qNext[idx]
+            # print(qTarget[idx][actions[idx]])
         
         
         self.qEval.train_on_batch(states,qTarget)
         
-        self.epsilon = self.epsilon - self.epsilonDec if self.epsilon > self.epsilonMin else self.epsilonMin
+        # self.epsilon = self.epsilon - self.epsilonDec if self.epsilon > self.epsilonMin else self.epsilonMin
+        if self.epsilon > self.epsilonMin:
+            self.epsilon -=  self.epsilonDec
         
         self.learnStepCounter += 1
+        if(keyboard.is_pressed('e')):
+            print("epsilon: ", self.epsilon)
+            sleep(0.2)
         
    
     def saveModel(self):
@@ -190,54 +215,7 @@ class Agent:
 
 
     
-    # def action(self):
-    #     pass
-     
-    # def reward(self, s, a):
-    #     pass
-    
-    # def sumPQ(self):
-    #     pass
-    
-    # #optimal action-value function   
-    # def optimalQ(self, s, a): 
-    #     pass
-    
-    # def updateMemory(self, experience):
-    #     print(experience)
-    #     if(len(self.memory >= self.N)):
-    #         self.memory[np.random.rand(0, self.N)] = experience
-    #     else:
-    #         np.append(experience,self.memory)
-        
    
-
-    # def getMemoryBatch(self, n=64):
-    #     batch = np.array([np.zeros(4)]*n)
-    #     for i in range(n):
-    #         rndMem = self.memory[np.random.randint(0, self.N)]       
-    #         batch[i] = rndMem
-    #     return batch 
-    
-
-    # def getAction(self):
-    #     pass
-    
-    
-    # def deepQlearn(self, matches):
-    #     done = False
-    #     for i in range(matches):
-    #         #init sequence and preprocessed sequence
-    #         at = 0
-    #         rt = 0
-    #         st = 0
-    #         sn = 0
-    #         while not done:
-                
-    #             if np.random.random() < self.prob:
-    #                 experience = np.array([st, at, rt, sn])
-    #             else:
-    #                 pass
                     
                     
                 

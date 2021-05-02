@@ -3,19 +3,28 @@ from NetworkModule import Agent
 from os import system
 from time import sleep
 import keyboard
+import matplotlib.pyplot as plt
+import numpy as np
+
+loadModel = False
+eps = 1
+if loadModel:
+    eps = 0.2
 
 
-loadModel = True
 sim = SnakeSim()
 
-agent = Agent(lr=1e-3, gamma=0.97, actions=sim.world.getSnake().actions, epsilon=0.4, batchSize=128, inputDims=(1,22))
+
+
+
+agent = Agent(fname='qtest', lr=1e-3, gamma=0.97, actions=sim.world.getSnake().actions, epsilon=eps, batchSize=128, inputDims=(1,22))
 state = sim.getState()
 agent.prepNetworksForLoad(state)
 
 if(loadModel):
     agent.loadModel()
     
-n=5000
+n = 1000000
 scores = []
 food = []
 mouse = []
@@ -25,15 +34,18 @@ qValues = []
 doPrint = False
 
 for i in range(n):
-    if(i == 1000):
-        print("Changed epsilonMin to",0.2)
-        agent.changeEpsMin(0.2)
-    elif(i == 2000):
-        print("Changed epsilonMin to",0.1)
-        agent.changeEpsMin(0.1)
-    elif(i == 3000):
-        print("Changed epsilonMin to",0.05)
-        agent.changeEpsMin(0.05)
+    # if(i == 1000):
+    #     print("Changed epsilonMin to",0.2)
+    #     agent.changeEpsMin(0.2)
+    # elif(i == 2000):
+    #     print("Changed epsilonMin to",0.1)
+    #     agent.changeEpsMin(0.1)
+    # elif(i == 10000):
+    #     print("Changed epsilonMin to",0.05)
+    #     agent.changeEpsMin(0.05)
+    if(i == 25000):
+        print("Changed epsilonMin to",0.005)
+        agent.changeEpsMin(0.005)
     
     alive = True
     state = sim.getState()
@@ -57,6 +69,9 @@ for i in range(n):
         if doPrint:
             system('cls')
             sim.world.printWorld()
+            print("\n-snakeView-\n")
+            sim.snake.printView()
+            # sleep(3)
             sleep(0.02)
     
         
@@ -80,4 +95,11 @@ inp = input("Save model (y/n): ").lower()
 if(inp == "y"):
      agent.saveModel()
 
+x = np.arange(len(scores))
+x1 = np.arange(len(food))
+x2 = np.arange(len(mouse))
 
+plt.plot(x, scores, '-b', alpha=0.7)
+plt.plot(x1, food, '-r', alpha=0.7)
+plt.plot(x2, mouse, '-g', alpha=0.7)
+plt.show()
