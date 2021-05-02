@@ -1,5 +1,5 @@
 import numpy as np
-
+from time import sleep
 
 
 
@@ -68,6 +68,7 @@ class GameMap():
                     self.setTile(part, 'ground')
                 else:
                     self.setTile(part, animal.getAnimal('body'))
+                    
                     
         
     
@@ -223,7 +224,7 @@ class Snake():
         
         ####################################################
         
-        self.__health = 100 #train on achieving highest HP
+        self.__health = 5000 #train on achieving highest HP
         
         self.bestHp = self.__health
         self.score = self.bestHp - 100
@@ -273,25 +274,27 @@ class Snake():
         bodyLength = len(self.__body)
         ##############################################################################
         #move body before head.
-        newBody = np.copy(self.__body[-1]) #in case food is eaten.    
+        # newBody = np.copy(self.__body[0]) #in case food is eaten.    
         if bodyLength > 1:    
+            # newBody = np.copy(self.__body[-1]) 
             i = bodyLength-1
-            while i > 0:
-                # tempBody = np.copy(self.__body[i-1]) 
+            self.__world.setTile(self.__body[-1], 'ground')
+            while i > 0:            
+                self.__world.setTile(self.__body[i], 'snakeTail')
                 self.__body[i] = self.__body[i-1]
-                i -= 1                      
+                i -= 1  
+         
+
         self.__body[0] = self.__head 
+        self.__world.setTile(self.__body[0], 'snakeTail')
         ##############################################################################
         #move head.
         self.__navigator.update(self.__legalMoves[direction])
         self.__head = self.__navigator.getPos()
-        # for b in self.__body:
-        #     if np.array_equal(self.__head, b): #if crash in tail, die.
-        #         self.lastReward = self.__health*(-1)
-        #         self.__health = 0
+       
      
         ##############################################################################
-        self.calcReward(newBody, self.__world.getTile(self.__head[0], self.__head[1]))  
+        self.calcReward(self.__body[-1], self.__world.getTile(self.__head[0], self.__head[1]))  
             
         if self.__health <= 0:
             self.alive = False
@@ -302,7 +305,7 @@ class Snake():
        
         
     def calcReward(self, bodyPart, tile):
-        # print(self.bodyParts)
+        
         if tile == self.__world.getBlock('water'): #+120 on water.
             self.lastReward = 120
             self.waterEaten += 1

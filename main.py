@@ -24,7 +24,7 @@ agent.prepNetworksForLoad(state)
 if(loadModel):
     agent.loadModel()
     
-n = 100000
+n = 1000000
 scores = []
 water = []
 mouse = []
@@ -34,7 +34,7 @@ rocksPower = []
 matchNumbers = []
 qValues = []
 
-doPrint = False
+doPrint = True
 
 for i in range(n):
     if(i == 1000):
@@ -46,9 +46,10 @@ for i in range(n):
     elif(i == 5000):
         print("Changed epsilonMin to",0.05)
         agent.changeEpsMin(0.05)
-    if(i == 25000):
+    elif(i == 25000):
         print("Changed epsilonMin to",0.005)
         agent.changeEpsMin(0.005)
+    
     
     alive = True
     state = sim.getState()
