@@ -108,15 +108,15 @@ class GameMap():
 
         
     def printWorld(self):
-        snakeBody = self.__snake.getPos('body')
+        # snakeBody = self.__snake.getPos('body')
        
         print("HP: ", self.__snake.getHealth(), " | body: ", self.__snake.getBodySize())
         print()
         for y, row in enumerate(self.__map):
             for x, tile in enumerate(row):
-                if self.__map[y][x] == self.__worldBlocks['snakeTail']:
-                    if [x, y] not in snakeBody:
-                        self.__map[y][x] = self.__worldBlocks['ground']
+                # if self.__map[y][x] == self.__worldBlocks['snakeTail']:
+                #     if [x, y] not in snakeBody:
+                #         self.__map[y][x] = self.__worldBlocks['ground']
                         
                     
                 print(self.blockVisual[tile], end=' ')
@@ -287,22 +287,19 @@ class Snake():
         ##############################################################################
         #move body before head.
         # newBody = np.copy(self.__body[0]) #in case food is eaten.    
+        for b in self.__body:
+            self.__world.setTile(b, 'ground')
         if bodyLength > 1:    
-            # newBody = np.copy(self.__body[-1]) 
             i = bodyLength-1
-            # self.__world.setTile(self.__body[-1], 'ground')
             while i > 0:            
-                self.__world.setTile(self.__body[i], 'snakeTail')
                 self.__body[i] = self.__body[i-1]
                 i -= 1  
          
-            
-         
-        self.__body[0] = np.copy(self.__head)
-        if len(self.__body > 1):
-            self.__world.setTile(self.__body[-1], 'ground')
-        else:
-            self.__world.setTile(self.__body[0], 'snakeTail')
+
+        self.__body[0] = self.__head
+        for b in self.__body:
+            self.__world.setTile(b, 'snakeTail')    
+        # self.__world.setTile(self.__body[0], 'snakeTail')
         ##############################################################################
         #move head.
         self.__navigator.update(self.__legalMoves[direction])

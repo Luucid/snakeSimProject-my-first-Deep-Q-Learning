@@ -73,8 +73,8 @@ for i in range(n):
         if doPrint:
             system('cls')
             sim.world.printWorld()
-            # print("\n-snakeView-\n")
-            # sim.snake.printView()
+            print("\n-snakeView-\n")
+            sim.snake.printView()
             # sleep(2)
             sleep(0.04)
     
