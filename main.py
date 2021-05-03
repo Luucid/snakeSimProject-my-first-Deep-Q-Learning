@@ -17,14 +17,14 @@ sim = SnakeSim()
 
 
 
-agent = Agent(fname='Q5wStoneSuperFruit', lr=1e-3, gamma=0.97, actions=sim.world.getSnake().actions, epsilon=eps, batchSize=128, inputDims=(1,36))
+agent = Agent(fname='tmp', lr=1e-3, gamma=0.975, actions=sim.world.getSnake().actions, epsilon=eps, batchSize=128, inputDims=(1,36))
 state = sim.getState()
 agent.prepNetworksForLoad(state)
 
 if(loadModel):
     agent.loadModel()
     
-n = 1000000
+n = 20000
 scores = []
 water = []
 mouse = []
@@ -47,8 +47,8 @@ for i in range(n):
         print("Changed epsilonMin to",0.05)
         agent.changeEpsMin(0.05)
     elif(i == 25000):
-        print("Changed epsilonMin to",0.005)
-        agent.changeEpsMin(0.005)
+        print("Changed epsilonMin to",0.01)
+        agent.changeEpsMin(0.01)
     
     
     alive = True
@@ -73,8 +73,8 @@ for i in range(n):
         if doPrint:
             system('cls')
             sim.world.printWorld()
-            print("\n-snakeView-\n")
-            sim.snake.printView()
+            # print("\n-snakeView-\n")
+            # sim.snake.printView()
             # sleep(2)
             sleep(0.04)
     
@@ -88,6 +88,9 @@ for i in range(n):
     rocks.append(sim.getRocksCrushed(power=False))
     rocksPower.append(sim.getRocksCrushed(power=True))
     matchNumbers.append(i)
+    if i % 100 == 0:
+        system('cls')
+        
     print("----------------")
     print("Game %i ended." % i)
     # print("Q: %i" % qValues[i])
@@ -103,7 +106,8 @@ for i in range(n):
 
 inp = input("Save model (y/n): ").lower()
 if(inp == "y"):
-     agent.saveModel()
+    name = input("enter modelName: ")
+    agent.saveModel(name)
 
 # x = np.arange(len(scores))
 x1 = np.arange(len(water))

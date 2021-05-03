@@ -11,6 +11,7 @@ class GameMap():
         
       
         self.__animalList = []
+        self.__snake = 0
         self.__height = y
         self.__width = x
         self.__map = np.zeros((y, x))
@@ -47,27 +48,48 @@ class GameMap():
     def spawnAnimal(self, animal):
         self.__animalList.append(animal)
         self.moveAnimal(animal)
+    
+    def spawnSnake(self, snake):
+        self.__snake = snake
+        self.moveSnake()
          
     def getBlock(self, block):
         return self.__worldBlocks[block]
     
     def getSnake(self):
-        return self.__animalList[0]
+        return self.__snake
+        # return self.__animalList[0]
     
-    def moveAnimal(self, animal, setGround=False):
-        animalHead = animal.getPos('head')
-        if setGround:
-            self.setTile(animalHead, 'ground')
-        else:
-            self.setTile(animalHead, animal.getAnimal('head'))
+    def prepSnakeForMove(self):
+        snakeHead = self.__snake.getPos('head') 
+        snakeBody = self.__snake.getPos('body')
+        self.setTile(snakeHead, 'ground')
+        for part in snakeBody:
+            self.setTile(part, 'ground')
+    
+    # def moveAnimal(self, animal, setGround=False):
+    #     animalHead = animal.getPos('head')
+    #     if setGround:
+    #         self.setTile(animalHead, 'ground')
+    #     else:
+    #         self.setTile(animalHead, animal.getAnimal('head'))
             
-        if animal.hasBody:
-            animalBody = animal.getPos('body')
-            for part in animalBody:
-                if setGround:
-                    self.setTile(part, 'ground')
-                else:
-                    self.setTile(part, animal.getAnimal('body'))
+    #     if animal.hasBody:
+    #         animalBody = animal.getPos('body')
+    #         for part in animalBody:
+    #             if setGround:
+    #                 self.setTile(part, 'ground')
+    #             else:
+    #                 self.setTile(part, animal.getAnimal('body'))
+    
+    
+    def moveSnake(self):
+        snakeHead = self.__snake.getPos('head') 
+        snakeBody = self.__snake.getPos('body')
+        self.setTile(snakeHead, 'snakeHead')
+        for part in snakeBody:
+            self.setTile(part, 'snakeTail')
+        
                     
                     
         
@@ -81,34 +103,28 @@ class GameMap():
                 xFood = np.random.randint(1, self.__width-1)
                 yFood = np.random.randint(1, self.__height-1)
             self.__map[yFood][xFood] = self.__worldBlocks[kind]
-            # else:
-            #     xFood = np.random.randint(3, self.__width-3)
-            #     yFood = np.random.randint(3, self.__height-3)
+
      
 
         
     def printWorld(self):
-        print(self.__animalList[0].getHealth())
+        snakeBody = self.__snake.getPos('body')
+       
+        print("HP: ", self.__snake.getHealth(), " | body: ", self.__snake.getBodySize())
+        print()
         for y, row in enumerate(self.__map):
-            for x, tile in enumerate(row):   
+            for x, tile in enumerate(row):
+                if self.__map[y][x] == self.__worldBlocks['snakeTail']:
+                    if [x, y] not in snakeBody:
+                        self.__map[y][x] = self.__worldBlocks['ground']
+                        
+                    
                 print(self.blockVisual[tile], end=' ')
-                # if self.__map[y][x] == self.__worldBlocks['snakeEyes']:
-                #     self.__map[y][x] = self.__worldBlocks['ground']  
             print("")
             
     
-            
-    def snakeView(self):
-        sv = self.__animalList[0].getView()
-        print(' ','▲', ' ')
-        for row in sv:
-            for tile in row:
-                print(self.blockVisual[tile], end=' ')
-            print("")
         
-        
-        
-        
+    
         
              
                      
@@ -125,16 +141,11 @@ class GameMap():
                 self.__map[pos[1]][pos[0]] = self.__worldBlocks[tile]
         
     def updateWorld(self, action): 
-        for animal in self.__animalList:
-            self.moveAnimal(animal, True)
-            animal.move(action)
-            self.moveAnimal(animal)
-            # print("HP: %i"%animal.getHealth())
-            
-        
-        
-        # self.printWorld()
-        return self.__animalList[0].alive
+        self.__snake.move(action)
+        self.moveSnake()
+        # self.cleanTails()
+        return self.__snake.alive
+
 
 
 
@@ -255,7 +266,8 @@ class Snake():
         
         
         
- 
+    def getBodySize(self):
+        return self.bodyParts
 
     def updateView(self):
        self.sight.updateView(self.__head, self.__navigator.getOri(), self.__world)
@@ -278,15 +290,19 @@ class Snake():
         if bodyLength > 1:    
             # newBody = np.copy(self.__body[-1]) 
             i = bodyLength-1
-            self.__world.setTile(self.__body[-1], 'ground')
+            # self.__world.setTile(self.__body[-1], 'ground')
             while i > 0:            
                 self.__world.setTile(self.__body[i], 'snakeTail')
                 self.__body[i] = self.__body[i-1]
                 i -= 1  
          
-
-        self.__body[0] = self.__head 
-        self.__world.setTile(self.__body[0], 'snakeTail')
+            
+         
+        self.__body[0] = np.copy(self.__head)
+        if len(self.__body > 1):
+            self.__world.setTile(self.__body[-1], 'ground')
+        else:
+            self.__world.setTile(self.__body[0], 'snakeTail')
         ##############################################################################
         #move head.
         self.__navigator.update(self.__legalMoves[direction])
@@ -452,7 +468,7 @@ class SnakeSim():
         self.mapY = y
         self.world = GameMap(x=self.mapX, y=self.mapY, stoneChance=self.sc)
         self.snake = Snake(16, 16, self.world)
-        self.world.spawnAnimal(self.snake)
+        self.world.spawnSnake(self.snake)
         self.world.addFood(x//4, 'water')
         self.world.addFood(x//8, 'mouse')
         self.world.addFood(2, 'specialFruit')
@@ -514,7 +530,7 @@ class SnakeSim():
     def resetGame(self):
         self.world = GameMap(x=self.mapX, y=self.mapY, stoneChance=self.sc)
         self.snake = Snake(16, 16, self.world)
-        self.world.spawnAnimal(self.snake)
+        self.world.spawnSnake(self.snake)
         self.world.addFood(self.mapX//8, 'water')
         self.world.addFood(self.mapX//4, 'mouse')
         self.world.addFood(2, 'specialFruit')

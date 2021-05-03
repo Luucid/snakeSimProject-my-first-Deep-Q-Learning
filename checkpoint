@@ -1,2 +1,2 @@
-model_checkpoint_path: "qtest5wide"
-all_model_checkpoint_paths: "qtest5wide"
+model_checkpoint_path: "Q5wStoneSuperFruit"
+all_model_checkpoint_paths: "Q5wStoneSuperFruit"

@@ -184,8 +184,8 @@ class Agent:
             sleep(0.2)
         
    
-    def saveModel(self):
-        self.qEval.save_weights(self.fname,save_format="tf")
+    def saveModel(self, fname):
+        self.qEval.save_weights(fname,save_format="tf")
         
     def prepNetworksForLoad(self,observation):
         observation = np.array([observation])
