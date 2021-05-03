@@ -374,9 +374,11 @@ class Snake():
     
     def addTail(self, pos):
         self.__body = np.append(self.__body, [pos], axis=0)
+        self.__world.setTile(self.__body[-1], 'snakeTail')
         self.bodyParts = len(self.__body)
 
     def removeTail(self):
+        self.__world.setTile(self.__body[-1], 'ground')
         self.__body = self.__body[:-1]
         self.bodyParts = len(self.__body)
         
