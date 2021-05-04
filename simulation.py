@@ -151,7 +151,7 @@ class GameMap():
 
 
 class Sight():
-    def __init__(self, world, sFov=5, sRange=7):
+    def __init__(self, world, sFov=5, sRange=8):
         self.__sFov = sFov   #width of vision
         self.__sRange = sRange #n tiles visible forward
         self.__view = np.zeros((sRange, sFov))
@@ -248,6 +248,7 @@ class Snake():
         
         self.bodyParts = 1
         self.lastReward = 0
+        self.walkPenalty = 0.2
         
         self.__hpUpgrade = 200
         self.__hpDowngrade = 100
@@ -324,17 +325,20 @@ class Snake():
             self.waterEaten += 1
             self.__health += 120
             self.__world.addFood(1)
+            self.walkPenalty = 0.2
             
         elif tile == self.__world.getBlock('mouse'): #+250 on mouse.
             self.lastReward = 250
             self.miceEaten += 1
             self.__health += 250
+            self.walkPenalty = 0.2
             self.__world.addFood(1, 'mouse')
         elif tile == self.__world.getBlock('specialFruit'): #25 frames of rock-immunity, +500 reward.
             self.lastReward = 500
             self.specialEaten += 1
             self.__health += 300
             self.rockImmunity += 25
+            self.walkPenalty = 0.2
             self.__world.addFood(1, 'specialFruit')
           
         elif tile == self.__world.getBlock('snakeTail'): #death on tail.
@@ -352,8 +356,9 @@ class Snake():
                 self.__health -= 200
                 self.rocksWithoutPower += 1
         else:
-            self.lastReward = -1.2
+            self.lastReward = - self.walkPenalty
             self.__health -= 1.2 #punish each step without food.
+            self.walkPenalty += 0.2
         
         if self.__health >= self.__hpUpgrade:
             self.__hpDowngrade += 100
@@ -373,11 +378,13 @@ class Snake():
         
     
     def addTail(self, pos):
+        self.lastReward += 400
         self.__body = np.append(self.__body, [pos], axis=0)
         self.__world.setTile(self.__body[-1], 'snakeTail')
         self.bodyParts = len(self.__body)
 
     def removeTail(self):
+        self.lastReward -= 200
         self.__world.setTile(self.__body[-1], 'ground')
         self.__body = self.__body[:-1]
         self.bodyParts = len(self.__body)
@@ -511,15 +518,18 @@ class SnakeSim():
          
         inputHealth = self.snake.getHealth()
         inputVision = self.snake.getView()
+        powered = self.snake.rockImmunity
         
-        state = np.zeros(36) 
+        state = np.zeros(42) 
         
         i=0
         for row in inputVision:
             for tile in row:      
                 state[i] = tile
                 i+=1
-        state[i] = inputHealth  
+        state[i] = inputHealth 
+        i += 1
+        state[i] = powered
     
         state = np.array(state,dtype=np.float32)
 

@@ -17,14 +17,14 @@ sim = SnakeSim()
 
 
 
-agent = Agent(fname='tmp', lr=1e-3, gamma=0.975, actions=sim.world.getSnake().actions, epsilon=eps, batchSize=128, inputDims=(1,36))
+agent = Agent(fname='tmp', lr=1e-3, gamma=0.975, actions=sim.world.getSnake().actions, epsilon=eps, batchSize=128, inputDims=(1,42))
 state = sim.getState()
 agent.prepNetworksForLoad(state)
 
 if(loadModel):
     agent.loadModel()
     
-n = 20000
+n = 200000
 scores = []
 water = []
 mouse = []
@@ -33,6 +33,7 @@ rocks = []
 rocksPower = []
 matchNumbers = []
 qValues = []
+epsVal = []
 
 doPrint = False
 
@@ -82,6 +83,7 @@ for i in range(n):
     
     # score = sim.getScore()
     # scores.append(score)
+    epsVal.append(agent.epsilon)
     water.append(sim.getWaterEaten())   
     mouse.append(sim.getMiceEaten())   
     special.append(sim.getSpecialEaten())
@@ -109,12 +111,12 @@ if(inp == "y"):
     name = input("enter modelName: ")
     agent.saveModel(name)
 
-# x = np.arange(len(scores))
-x1 = np.arange(len(water))
-x2 = np.arange(len(mouse))
-x3 = np.arange(len(special))
 
-plt.plot(x1, water, '-b', alpha=0.7)
-plt.plot(x2, mouse, '-r', alpha=0.7)
-plt.plot(x3, special, '-g', alpha=0.7)
+# epsVal = np.flip(epsVal, 0)
+x = np.arange(len(water))
+
+plt.plot(x, water, '.b', alpha=0.7)
+plt.plot(x, mouse, '.r', alpha=0.7)
+plt.plot(x, special, '.g', alpha=0.7)
+plt.xlabel("rounds")
 plt.show()
