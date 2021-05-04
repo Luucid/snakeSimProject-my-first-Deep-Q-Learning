@@ -16,6 +16,7 @@ class GameMap():
         self.__width = x
         self.__map = np.zeros((y, x))
         self.__generateWorld()
+        self.replay = [np.copy(self.__map)]
         
       
         
@@ -52,6 +53,7 @@ class GameMap():
     def spawnSnake(self, snake):
         self.__snake = snake
         self.moveSnake()
+    
          
     def getBlock(self, block):
         return self.__worldBlocks[block]
@@ -108,17 +110,11 @@ class GameMap():
 
         
     def printWorld(self):
-        # snakeBody = self.__snake.getPos('body')
-       
+    
         print("HP: ", self.__snake.getHealth(), " | body: ", self.__snake.getBodySize())
-        print()
+        print("")
         for y, row in enumerate(self.__map):
-            for x, tile in enumerate(row):
-                # if self.__map[y][x] == self.__worldBlocks['snakeTail']:
-                #     if [x, y] not in snakeBody:
-                #         self.__map[y][x] = self.__worldBlocks['ground']
-                        
-                    
+            for x, tile in enumerate(row):                                       
                 print(self.blockVisual[tile], end=' ')
             print("")
             
@@ -143,7 +139,7 @@ class GameMap():
     def updateWorld(self, action): 
         self.__snake.move(action)
         self.moveSnake()
-        # self.cleanTails()
+        self.replay.append(np.copy(self.__map))
         return self.__snake.alive
 
 
@@ -212,9 +208,7 @@ class Sight():
         
         
         
-        # for row in self.coordView:
-        #     for v in row:
-        #         self.world.setVision(v, 'snakeEyes')
+
                 
            
             
@@ -239,7 +233,7 @@ class Snake():
         
         self.bestHp = self.__health
         self.score = self.bestHp - 100
-        
+        self.rewards = {'mouse':200, 'water':120, 'ground': 0.2, 'specialFruit':500, 'stone':-200, 'snakeTail':-self.__health }
         self.waterEaten = 0
         self.miceEaten = 0
         self.specialEaten = 0
@@ -318,35 +312,42 @@ class Snake():
         # print(self.__currentView)
        
         
-    def calcReward(self, bodyPart, tile):
+    def calcReward(self, bodyPart, tile):  #make this to a loop with rewards etc in dict.. ugly code fix asap.
+    
+    
+        
         
         if tile == self.__world.getBlock('water'): #+120 on water.
             self.lastReward = 120
             self.waterEaten += 1
             self.__health += 120
             self.__world.addFood(1)
-            self.walkPenalty = 0.2
+            self.walkPenalty = 0.1
             
         elif tile == self.__world.getBlock('mouse'): #+250 on mouse.
             self.lastReward = 250
             self.miceEaten += 1
             self.__health += 250
-            self.walkPenalty = 0.2
+            self.walkPenalty = 0.1
             self.__world.addFood(1, 'mouse')
+            
         elif tile == self.__world.getBlock('specialFruit'): #25 frames of rock-immunity, +500 reward.
             self.lastReward = 500
             self.specialEaten += 1
             self.__health += 300
             self.rockImmunity += 25
-            self.walkPenalty = 0.2
+            self.walkPenalty = 0.1
             self.__world.addFood(1, 'specialFruit')
           
         elif tile == self.__world.getBlock('snakeTail'): #death on tail.
+            
             self.lastReward = self.__health*(-1)
             self.__health = 0
+                
         elif tile == self.__world.getBlock('pit'): #death on pit.
             self.lastReward = self.__health*(-1)
             self.__health = 0
+            
         elif tile == self.__world.getBlock('stone'): #-100 on stone
             if self.rockImmunity > 0:
                 self.lastReward = +100
@@ -356,9 +357,9 @@ class Snake():
                 self.__health -= 200
                 self.rocksWithoutPower += 1
         else:
-            self.lastReward = - self.walkPenalty
+            self.lastReward = self.walkPenalty * (-1)
             self.__health -= 1.2 #punish each step without food.
-            self.walkPenalty += 0.2
+            self.walkPenalty += 0.1
         
         if self.__health >= self.__hpUpgrade:
             self.__hpDowngrade += 100
@@ -369,22 +370,24 @@ class Snake():
             self.__hpDowngrade -= 100
             self.__hpUpgrade -= 100
             self.removeTail()
+            
         if self.__health > self.bestHp:
             self.bestHp = self.__health
             self.score = self.bestHp-100
+            
         if self.rockImmunity > 0:
             self.rockImmunity -= 1
             
         
     
     def addTail(self, pos):
-        self.lastReward += 400
+        self.lastReward += 100
         self.__body = np.append(self.__body, [pos], axis=0)
         self.__world.setTile(self.__body[-1], 'snakeTail')
         self.bodyParts = len(self.__body)
 
     def removeTail(self):
-        self.lastReward -= 200
+        self.lastReward -= 100
         self.__world.setTile(self.__body[-1], 'ground')
         self.__body = self.__body[:-1]
         self.bodyParts = len(self.__body)
@@ -498,6 +501,8 @@ class SnakeSim():
         state = self.getState()
         return reward, state, alive
     
+
+    
     def getWaterEaten(self):
         return self.snake.waterEaten
     
@@ -509,18 +514,29 @@ class SnakeSim():
     
     def getScore(self):
         return self.snake.score
+    
+    
+    
+    
     def getRocksCrushed(self, power=True):
         if power:
             return self.snake.rocksWithPower
         return self.snake.rocksWithoutPower
     
+    
+
+    
+    
+    
+    
     def getState(self):
          
         inputHealth = self.snake.getHealth()
         inputVision = self.snake.getView()
+        inputBody = self.snake.bodyParts
         powered = self.snake.rockImmunity
         
-        state = np.zeros(42) 
+        state = np.zeros(43) 
         
         i=0
         for row in inputVision:
@@ -530,11 +546,16 @@ class SnakeSim():
         state[i] = inputHealth 
         i += 1
         state[i] = powered
+        i += 1
+        state[i] = inputBody
     
         state = np.array(state,dtype=np.float32)
 
         return state
         
+    
+    def getReplay(self):
+        return self.world.replay
     
     def resetGame(self):
         self.world = GameMap(x=self.mapX, y=self.mapY, stoneChance=self.sc)

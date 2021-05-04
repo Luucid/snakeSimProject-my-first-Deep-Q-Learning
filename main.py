@@ -6,6 +6,10 @@ import keyboard
 import matplotlib.pyplot as plt
 import numpy as np
 
+
+
+
+
 loadModel = False
 eps = 1
 if loadModel:
@@ -17,7 +21,7 @@ sim = SnakeSim()
 
 
 
-agent = Agent(fname='tmp', lr=1e-3, gamma=0.975, actions=sim.world.getSnake().actions, epsilon=eps, batchSize=128, inputDims=(1,42))
+agent = Agent(fname='tmp', lr=1e-3, gamma=0.975, actions=sim.world.getSnake().actions, epsilon=eps, batchSize=128, inputDims=(1,43))
 state = sim.getState()
 agent.prepNetworksForLoad(state)
 
@@ -34,6 +38,9 @@ rocksPower = []
 matchNumbers = []
 qValues = []
 epsVal = []
+bestScore = 0
+
+demo = []
 
 doPrint = False
 
@@ -55,6 +62,8 @@ for i in range(n):
     alive = True
     state = sim.getState()
     
+
+    
     while alive:
         if(keyboard.is_pressed('p')):
             sleep(0.5)
@@ -66,16 +75,18 @@ for i in range(n):
         move = sim.snake.actions[action]
         qValues.append(Q)
         reward, state_, alive = sim.step(move)
-        agent.storeTransition(state, action, reward, state_, alive)
-        
+        agent.storeTransition(state, action, reward, state_, alive) 
         state = state_
         agent.learn()
+  
+        
+
 
         if doPrint:
             system('cls')
             sim.world.printWorld()
-            print("\n-snakeView-\n")
-            sim.snake.printView()
+            # print("\n-snakeView-\n")
+            # sim.snake.printView()
             # sleep(2)
             sleep(0.04)
     
@@ -90,6 +101,10 @@ for i in range(n):
     rocks.append(sim.getRocksCrushed(power=False))
     rocksPower.append(sim.getRocksCrushed(power=True))
     matchNumbers.append(i)
+    if (water[i]+mouse[i]+special[i]+rocksPower[i]) > bestScore:
+        bestScore = water[i]+mouse[i]+special[i]+rocksPower[i]
+        demo = sim.getReplay()
+    
     if i % 100 == 0:
         system('cls')
         
@@ -113,10 +128,41 @@ if(inp == "y"):
 
 
 # epsVal = np.flip(epsVal, 0)
-x = np.arange(len(water))
 
-plt.plot(x, water, '.b', alpha=0.7)
-plt.plot(x, mouse, '.r', alpha=0.7)
-plt.plot(x, special, '.g', alpha=0.7)
-plt.xlabel("rounds")
+
+for x, q in enumerate(qValues):  
+    c = '.r'
+    if q < -100:
+        c = '.r'
+    elif q < 100:
+        c = '.y'
+    elif q < 500:
+        c = '.g'
+    else:
+        c = '.b'
+        
+    plt.plot(x, q, c, alpha=0.1)
+    
 plt.show()
+# plt.plot(x, water, '.b', alpha=0.7)
+# plt.plot(x, mouse, '.r', alpha=0.7)
+# plt.plot(x, special, '.g', alpha=0.7)
+
+# plt.xlabel("rounds")
+
+
+inp = input("View best run replay? (y/n): ").lower()
+if(inp == "y"):
+    blockVisual = {0:'░', 1:'█', 2:'҈',7:'ꝏ', 8:'ѽ',9:'ϕ', 16:'●', 17:'•', 18:'░'}
+    for frame in demo:
+        system('cls')
+        for row in frame:
+            for tile in row:
+                print(blockVisual[tile], end=' ')
+            print("")
+        sleep(0.04)
+else:
+    pass
+    
+
+
