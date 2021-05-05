@@ -10,7 +10,7 @@ import numpy as np
 
 
 
-loadModel = True
+loadModel = False
 eps = 1
 if loadModel:
     eps = 0.2
@@ -21,7 +21,7 @@ sim = SnakeSim()
 
 
 
-agent = Agent(fname='goodshit', lr=1e-3, gamma=0.975, actions=sim.world.getSnake().actions, epsilon=eps, batchSize=128, inputDims=(1,43))
+agent = Agent(fname='tmp', lr=1e-3, gamma=0.98, actions=sim.world.getSnake().actions, epsilon=eps, batchSize=128, inputDims=(1,43))
 state = sim.getState()
 agent.prepNetworksForLoad(state)
 
@@ -105,6 +105,15 @@ for i in range(n):
         bestScore = water[i]+mouse[i]+special[i]+rocksPower[i]
         demo = sim.getReplay()
     
+    if(keyboard.is_pressed('v')):
+            inp = input("plot Qvalues so far? (y/n): ").lower()
+            if(inp == "y"):
+               x = np.arange(len(qValues))
+               plt.plot(x, qValues, '.b', alpha=0.1)
+               plt.show() 
+                
+           
+    
     if i % 100 == 0:
         system('cls')
         
@@ -121,6 +130,14 @@ for i in range(n):
             break
     sim.resetGame()
 
+
+
+x = np.arange(len(qValues))
+plt.plot(x, qValues, '.b', alpha=0.1)
+    
+plt.show()
+
+
 inp = input("Save model (y/n): ").lower()
 if(inp == "y"):
     name = input("enter modelName: ")
@@ -130,10 +147,7 @@ if(inp == "y"):
 # epsVal = np.flip(epsVal, 0)
 
 
-x = np.arange(len(qValues))
-plt.plot(x, qValues, '.b', alpha=0.1)
-    
-plt.show()
+
 # plt.plot(x, water, '.b', alpha=0.7)
 # plt.plot(x, mouse, '.r', alpha=0.7)
 # plt.plot(x, special, '.g', alpha=0.7)
