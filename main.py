@@ -10,7 +10,7 @@ import numpy as np
 
 
 
-loadModel = False
+loadModel = True
 eps = 1
 if loadModel:
     eps = 0.2
@@ -21,7 +21,7 @@ sim = SnakeSim()
 
 
 
-agent = Agent(fname='tmp', lr=1e-3, gamma=0.975, actions=sim.world.getSnake().actions, epsilon=eps, batchSize=128, inputDims=(1,43))
+agent = Agent(fname='goodshit', lr=1e-3, gamma=0.975, actions=sim.world.getSnake().actions, epsilon=eps, batchSize=128, inputDims=(1,43))
 state = sim.getState()
 agent.prepNetworksForLoad(state)
 
@@ -130,18 +130,8 @@ if(inp == "y"):
 # epsVal = np.flip(epsVal, 0)
 
 
-for x, q in enumerate(qValues):  
-    c = '.r'
-    if q < -100:
-        c = '.r'
-    elif q < 100:
-        c = '.y'
-    elif q < 500:
-        c = '.g'
-    else:
-        c = '.b'
-        
-    plt.plot(x, q, c, alpha=0.1)
+x = np.arange(len(qValues))
+plt.plot(x, qValues, '.b', alpha=0.1)
     
 plt.show()
 # plt.plot(x, water, '.b', alpha=0.7)
