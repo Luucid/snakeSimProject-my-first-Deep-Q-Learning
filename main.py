@@ -19,8 +19,6 @@ if loadModel:
 sim = SnakeSim()
 
 
-
-
 agent = Agent(fname='tmp', lr=1e-3, gamma=0.987654321, actions=sim.world.getSnake().actions, epsilon=eps, batchSize=128, inputDims=(1,43))
 state = sim.getState()
 agent.prepNetworksForLoad(state)
@@ -33,8 +31,7 @@ scores = []
 water = []
 mouse = []
 special = []
-rocks = []
-rocksPower = []
+score = []
 matchNumbers = []
 qValues = []
 epsVal = []
@@ -79,8 +76,6 @@ for i in range(n):
         state = state_
         agent.learn()
   
-        
-
 
         if doPrint:
             system('cls')
@@ -89,20 +84,15 @@ for i in range(n):
             # sim.snake.printView()
             # sleep(2)
             sleep(0.04)
-    
-        
-    
-    # score = sim.getScore()
-    # scores.append(score)
+
     epsVal.append(agent.epsilon)
     water.append(sim.getWaterEaten())   
     mouse.append(sim.getMiceEaten())   
     special.append(sim.getSpecialEaten())
-    rocks.append(sim.getRocksCrushed(power=False))
-    rocksPower.append(sim.getRocksCrushed(power=True))
+    score.append(sim.getScore())
     matchNumbers.append(i)
-    if (water[i]+mouse[i]+special[i]+rocksPower[i]) > bestScore:
-        bestScore = water[i]+mouse[i]+special[i]+rocksPower[i]
+    if (water[i]+mouse[i]+special[i]) > bestScore:
+        bestScore = water[i]+mouse[i]+special[i]
         demo = sim.getReplay()
     
     if(keyboard.is_pressed('v')):
@@ -123,8 +113,7 @@ for i in range(n):
     print("Water: %i" % water[i])
     print("Mouse: %i" % mouse[i])
     print("special: %i" % special[i])
-    print("rocks with power: %i" % rocksPower[i])
-    print("rocks without power: %i" % rocks[i])
+    print("score: %i" % score[i])
     print("----------------\n")
     if(keyboard.is_pressed("Esc")):
             break

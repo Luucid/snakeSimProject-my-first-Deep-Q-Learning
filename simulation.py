@@ -183,13 +183,14 @@ class Sight():
         
         getDir = [True, True, True, True, True]     
         vision = abs(ori[0])
-
+        
         
         self.setLeftMidRight(vision, pos[vision], ori[vision-1])
  
         tmpMid = pos[vision-1]
         for y, row in enumerate(self.__view):
             for i in range(self.__sFov):
+                # print(self.__view, "\n\n")
                 if getDir[i]:      
                     
                     if vision == 1:
@@ -204,62 +205,66 @@ class Sight():
                 else:
                     self.__view[y][i] = world.getBlock('pit')                    
             tmpMid += ori[vision-1]  
+        # print("here?")
         
         
         
+          
+class RewardSystem():
+    def __init__(self):
+        self.rewards = {'mouse':200, 'water':150, 'ground': -0.1, 'specialFruit':300, 'stone':-200, 'pit':-10000, 'snakeTail':-100000 }
+        self.tiles = { 0:'ground', 1:'stone', 2:'pit', 7:'specialFruit', 8:'water',9:'mouse', 16:'snakeHead', 17:'snakeTail' }
+        self.consumed = {'mouse':0, 'water':0, 'specialFruit':0}
+        self.lastReward = 0
+        self.score = 0
         
-
+    def calcReward(self, tile): 
+        if tile in self.tiles:
+            self.lastReward = self.rewards[self.tiles[tile]]
+            if self.tiles[tile] in self.consumed:
+                self.consumed[self.tiles[tile]] += 1            
+        self.score = sum(self.consumed.values())  
+        return self.lastReward, self.score
                 
-           
+        
             
-            
-            
-              
-           
 
 class Snake():
     def __init__(self, x, y, world):
+        
+        ######################World########################
+        
         self.actions = np.array([3, 0, 1])
+        self.headVisual = ['▲','►','▼','◄']
         self.__legalMoves = {3:'left', 0:'forward', 1:'right'}
+ 
         self.__navigator = Position(x, y)
         self.__world = world
+        self.rewards = RewardSystem()
+        self.lastReward = self.rewards.lastReward
+        self.score = self.rewards.score
         
+        ######################health########################
         
-        self.headVisual = ['▲','►','▼','◄']
-        
-        ####################################################
-        
-        self.__health = 100 #train on achieving highest HP
-        
-        self.bestHp = self.__health
-        self.score = self.bestHp - 100
-        self.rewards = {'mouse':200, 'water':120, 'ground': 0.2, 'specialFruit':500, 'stone':-200, 'snakeTail':-self.__health }
-        self.waterEaten = 0
-        self.miceEaten = 0
-        self.specialEaten = 0
-        self.rocksWithPower = 0
-        self.rocksWithoutPower = 0
-        
-        self.bodyParts = 1
-        self.lastReward = 0
-        self.walkPenalty = 0.2
-        
+        self.__health = 100 #train on achieving highest HP 
+        self.bestHp = self.__health  
         self.__hpUpgrade = 200
         self.__hpDowngrade = 100
         
-        ####################################################
+        #######################body#########################
+        
         self.__head = self.__navigator.getPos()
         self.__body = np.array([self.__navigator.getPos() - self.__navigator.getOri()])
+        self.bodyParts = 1
         
         self.sight = Sight(world)
         self.sight.updateView(self.__head, self.__navigator.getOri(), world)     
         self.__currentView = self.sight.getView()
-        # self.coordView = self.sight.coordView
-        self.rockImmunity = 0
+      
         self.hasBody = True
         self.alive = True
         
-        
+
         
     def getBodySize(self):
         return self.bodyParts
@@ -267,101 +272,13 @@ class Snake():
     def updateView(self):
        self.sight.updateView(self.__head, self.__navigator.getOri(), self.__world)
        self.__currentView = self.sight.getView()
-       if self.rockImmunity > 0:
-           self.__world.blockVisual[16] = '☼'
-       else:
-           self.__world.blockVisual[16] = self.headVisual[self.__navigator.getdirectionIdx()]
-       
-       
-        
-    
-    def move(self, action):        
-        # direction = np.random.choice(self.moves)
-        direction = action
-        bodyLength = len(self.__body)
-        ##############################################################################
-        #move body before head.
-        # newBody = np.copy(self.__body[0]) #in case food is eaten.    
-        for b in self.__body:
-            self.__world.setTile(b, 'ground')
-        if bodyLength > 1:    
-            i = bodyLength-1
-            while i > 0:            
-                self.__body[i] = self.__body[i-1]
-                i -= 1  
-         
-
-        self.__body[0] = self.__head
-        for b in self.__body:
-            self.__world.setTile(b, 'snakeTail')    
-        # self.__world.setTile(self.__body[0], 'snakeTail')
-        ##############################################################################
-        #move head.
-        self.__navigator.update(self.__legalMoves[direction])
-        self.__head = self.__navigator.getPos()
+       self.__world.blockVisual[16] = self.headVisual[self.__navigator.getdirectionIdx()]
+       # self.__world.printWorld()
+       # sleep(2)
        
      
-        ##############################################################################
-        self.calcReward(self.__body[-1], self.__world.getTile(self.__head[0], self.__head[1]))  
-            
-        if self.__health <= 0:
-            self.alive = False
-        else:
-            self.updateView()
-        ##############################################################################
-        # print(self.__currentView)
        
-        
-    def calcReward(self, bodyPart, tile):  #make this to a loop with rewards etc in dict.. ugly code fix asap.
-    
-    
-        
-        
-        if tile == self.__world.getBlock('water'): #+120 on water.
-            self.lastReward = 120
-            self.waterEaten += 1
-            self.__health += 120
-            self.__world.addFood(1)
-            self.walkPenalty = 0.1
-            
-        elif tile == self.__world.getBlock('mouse'): #+250 on mouse.
-            self.lastReward = 250
-            self.miceEaten += 1
-            self.__health += 250
-            self.walkPenalty = 0.1
-            self.__world.addFood(1, 'mouse')
-            
-        elif tile == self.__world.getBlock('specialFruit'): #25 frames of rock-immunity, +500 reward.
-            self.lastReward = 300
-            self.specialEaten += 1
-            self.__health += 300
-            self.rockImmunity += 25
-            self.walkPenalty = 0.1
-            self.__world.addFood(1, 'specialFruit')
-          
-        elif tile == self.__world.getBlock('snakeTail'): #death on tail.
-            
-            self.lastReward = self.__health*(-1)
-            self.__health = 0
-                
-        elif tile == self.__world.getBlock('pit'): #death on pit.
-            self.lastReward = self.__health*(-1)
-            self.__health = 0
-            
-        elif tile == self.__world.getBlock('stone'): #-100 on stone
-            if self.rockImmunity > 0:
-                self.lastReward = 500
-                self.__health += 500
-                self.rocksWithPower += 1
-            else:
-                self.lastReward = -300
-                self.__health -= 300
-                self.rocksWithoutPower += 1
-        else:
-            self.lastReward = -self.walkPenalty
-            self.__health -= 1.2 #punish each step without food.
-            self.walkPenalty += 0.01
-        
+    def checkIfUpgrade(self, bodyPart):
         if self.__health >= self.__hpUpgrade:
             self.__hpDowngrade += 100
             self.__hpUpgrade += 100
@@ -371,15 +288,43 @@ class Snake():
             self.__hpDowngrade -= 100
             self.__hpUpgrade -= 100
             self.removeTail()
-            
-        if self.__health > self.bestHp:
-            self.bestHp = self.__health
-            self.score = self.bestHp-100
-            
-        if self.rockImmunity > 0:
-            self.rockImmunity -= 1
-            
         
+    
+    def move(self, action):        
+        
+        direction = action
+        bodyLength = len(self.__body)
+        for b in self.__body:
+            self.__world.setTile(b, 'ground')
+        if bodyLength > 1:    
+            i = bodyLength-1
+            while i > 0:            
+                self.__body[i] = self.__body[i-1]
+                i -= 1  
+         
+        self.__body[0] = self.__head
+        for b in self.__body:
+            self.__world.setTile(b, 'snakeTail')    
+        
+        self.__navigator.update(self.__legalMoves[direction])
+        self.__head = self.__navigator.getPos()
+       
+     
+        ##############################################################################
+        self.lastReward, self.score = self.rewards.calcReward(self.__world.getTile(self.__head[0], self.__head[1]))  
+        self.__health += self.lastReward
+        self.checkIfUpgrade(self.__body[-1])
+        # self.calcReward(self.__body[-1], self.__world.getTile(self.__head[0], self.__head[1]))  
+            
+        if self.__health <= 0:
+            self.alive = False
+        else:
+            self.updateView()
+        
+        ##############################################################################
+        
+       
+          
     
     def addTail(self, pos):
         self.lastReward += 100
@@ -429,11 +374,6 @@ class Snake():
    
         
            
-        
-        
-   
-        
-
 
 class Position():
     def __init__(self, sx=1, sy=1):
@@ -505,37 +445,23 @@ class SnakeSim():
 
     
     def getWaterEaten(self):
-        return self.snake.waterEaten
+        return self.snake.rewards.consumed['water']
     
     def getSpecialEaten(self):
-        return self.snake.specialEaten
+        return self.snake.rewards.consumed['specialFruit']
     
     def getMiceEaten(self):
-        return self.snake.miceEaten
+        return self.snake.rewards.consumed['mouse']
     
     def getScore(self):
         return self.snake.score
-    
-    
-    
-    
-    def getRocksCrushed(self, power=True):
-        if power:
-            return self.snake.rocksWithPower
-        return self.snake.rocksWithoutPower
-    
-    
-
-    
-    
-    
     
     def getState(self):
          
         inputHealth = self.snake.getHealth()
         inputVision = self.snake.getView()
         inputBody = self.snake.bodyParts
-        powered = self.snake.rockImmunity
+        score = self.snake.score
         
         state = np.zeros(43) 
         
@@ -546,7 +472,7 @@ class SnakeSim():
                 i+=1
         state[i] = inputHealth 
         i += 1
-        state[i] = powered
+        state[i] = score
         i += 1
         state[i] = inputBody
     
@@ -565,7 +491,7 @@ class SnakeSim():
         self.world.addFood(self.mapX//8, 'water')
         self.world.addFood(self.mapX//4, 'mouse')
         self.world.addFood(2, 'specialFruit')
-        # self.world.printWorld()
+        
         
    
         
@@ -573,21 +499,4 @@ class SnakeSim():
     
     
 
-# def setLeftMidRight(self, vision, pos, ori):
-#         if vision == 1: #horizontal
-#             self.__leftMidRight[0] = pos - ori
-#             self.__leftMidRight[1] = pos
-#             self.__leftMidRight[2] = pos + ori
-#         else:             
-#             self.__leftMidRight[2] = pos - ori
-#             self.__leftMidRight[1] = pos
-#             self.__leftMidRight[0] = pos + ori
-    
-# if vision == 1: #horizontal
-  #     leftMidRight[0] = pos[vision] - ori[vision-1]
-  #     leftMidRight[1] = pos[vision]
-  #     leftMidRight[2] = pos[vision] + ori[vision-1] 
-  # else:
-  #     leftMidRight[2] = pos[vision] - ori[vision-1]
-  #     leftMidRight[1] = pos[vision]
-  #     leftMidRight[0] = pos[vision] + ori[vision-1]  
+
