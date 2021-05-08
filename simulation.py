@@ -332,7 +332,7 @@ class Snake():
             self.__world.addFood(1, 'mouse')
             
         elif tile == self.__world.getBlock('specialFruit'): #25 frames of rock-immunity, +500 reward.
-            self.lastReward = 500
+            self.lastReward = 300
             self.specialEaten += 1
             self.__health += 300
             self.rockImmunity += 25
@@ -350,16 +350,17 @@ class Snake():
             
         elif tile == self.__world.getBlock('stone'): #-100 on stone
             if self.rockImmunity > 0:
-                self.lastReward = +100
+                self.lastReward = 500
+                self.__health += 500
                 self.rocksWithPower += 1
             else:
-                self.lastReward = -200
-                self.__health -= 200
+                self.lastReward = -300
+                self.__health -= 300
                 self.rocksWithoutPower += 1
         else:
-            self.lastReward = self.walkPenalty * (-1)
+            self.lastReward = -self.walkPenalty
             self.__health -= 1.2 #punish each step without food.
-            self.walkPenalty += 0.1
+            self.walkPenalty += 0.01
         
         if self.__health >= self.__hpUpgrade:
             self.__hpDowngrade += 100

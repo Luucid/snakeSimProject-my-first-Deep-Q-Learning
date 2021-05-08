@@ -21,14 +21,14 @@ sim = SnakeSim()
 
 
 
-agent = Agent(fname='tmp', lr=1e-3, gamma=0.98, actions=sim.world.getSnake().actions, epsilon=eps, batchSize=128, inputDims=(1,43))
+agent = Agent(fname='tmp', lr=1e-3, gamma=0.987654321, actions=sim.world.getSnake().actions, epsilon=eps, batchSize=128, inputDims=(1,43))
 state = sim.getState()
 agent.prepNetworksForLoad(state)
 
 if(loadModel):
     agent.loadModel()
     
-n = 200000
+n = 250000
 scores = []
 water = []
 mouse = []
